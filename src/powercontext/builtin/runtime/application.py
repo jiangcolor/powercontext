@@ -299,6 +299,7 @@ if TYPE_CHECKING:
 
     from powercontext.builtin.handoff_report.application import HandoffReportApplication
     from powercontext.builtin.runtime.artifact_processing import ArtifactProcessingSupervisors
+    from powercontext.builtin.runtime.context_pack import ContextPack, ContextPackDelta
 
 
 class TopicMemorySearch(Protocol):
@@ -846,6 +847,33 @@ class ScopedContextApplication:
             if authorize_scopes is not None:
                 await authorize_scopes((self.scope_id, *scope.context_references))
             return await self._prepare(request, scope)
+
+    async def prepare_incremental(
+        self,
+        request: PrepareContextRequest,
+        /,
+        *,
+        base_pack: ContextPack | None = None,
+    ) -> ContextPack | ContextPackDelta:
+        """Return a full ContextPack, or a delta against ``base_pack`` when one is supplied."""
+
+        from powercontext.builtin.runtime.context_pack import (
+            DEFAULT_CHUNK_BYTES,
+            ContextPackDelta,
+            ContextPackError,
+        )
+        from powercontext.builtin.runtime.context_pack import ContextPack as _Pack
+
+        prepared = await self.prepare(request)
+        target = _Pack.from_content(prepared.content or "", chunk_bytes=DEFAULT_CHUNK_BYTES)
+        if base_pack is None:
+            return target
+        if not isinstance(base_pack, _Pack):
+            raise InvalidRuntimeRequestError("prepare-incremental-base-pack")
+        try:
+            return ContextPackDelta.between(base_pack, target)
+        except ContextPackError as error:
+            raise InvalidRuntimeRequestError("prepare-incremental-base-pack") from error
 
     async def _prepare(self, request: PrepareContextRequest, scope: ScopeDescriptor, /) -> PreparedContext:
         build, effort = await self._prepare_build(request, scope)
