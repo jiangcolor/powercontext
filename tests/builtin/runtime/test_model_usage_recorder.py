@@ -67,6 +67,12 @@ def _offer(recorder: _ModelUsageRecorder, usage: InferenceUsage | None = None) -
     recorder.offer(_SCOPE, _PURPOSE, _OPERATION, usage or InferenceUsage(requests=1), _DAY)
 
 
+def _use_healthy_write_budget(recorder: _ModelUsageRecorder) -> None:
+    """Keep recovery assertions independent of the deliberately tiny fault window."""
+    recorder._write_timeout_seconds = 5.0
+    recorder._flush_timeout_seconds = 5.0
+
+
 async def _rows(database: AsyncDatabase) -> tuple[StoredModelUsage, ...]:
     async with database.transaction() as connection:
         return await StatisticsRepository().usage(connection, _SCOPE, _DAY, _DAY)
@@ -89,7 +95,10 @@ def test_flush_persists_copied_usage_with_unknown_tokens_and_original_date(tmp_p
     async def scenario() -> None:
         config = SQLiteConfig(url=f"sqlite+aiosqlite:///{tmp_path / 'usage.db'}") if file_backed else SQLiteConfig()
         async with _database(config) as database:
-            recorder = _ModelUsageRecorder(database, StatisticsRepository())
+            # This test checks persisted values, not the short best-effort deadline.
+            recorder = _ModelUsageRecorder(
+                database, StatisticsRepository(), write_timeout_seconds=5.0, flush_timeout_seconds=5.0
+            )
             try:
                 usage = InferenceUsage(requests=2, input_tokens=None, output_tokens=4)
                 _offer(recorder, usage)
@@ -169,6 +178,7 @@ def test_long_shared_transaction_drops_usage_without_invalidating_memory() -> No
                         raise ValueError("business rollback")  # noqa: TRY003
                 assert await _rows(database) == ()
                 await _assert_connection_restored(database)
+                _use_healthy_write_budget(recorder)
                 _offer(recorder)
                 await recorder.flush()
                 assert (await _rows(database))[0].requests == 1
@@ -192,6 +202,7 @@ def test_file_writer_lock_does_not_consume_busy_timeout(tmp_path: Path) -> None:
                     assert asyncio.get_running_loop().time() - start < 0.5
                 assert await _rows(database) == ()
                 await _assert_connection_restored(database)
+                _use_healthy_write_budget(recorder)
                 _offer(recorder)
                 await recorder.flush()
                 assert (await _rows(database))[0].requests == 1
@@ -497,6 +508,7 @@ def test_commit_lock_rolls_back_usage_and_restores_connection(tmp_path: Path) ->
                 reader.rollback()
                 assert await _rows(database) == ()
                 await _assert_connection_restored(database)
+                _use_healthy_write_budget(recorder)
                 _offer(recorder)
                 await recorder.flush()
                 assert (await _rows(database))[0].requests == 1
@@ -540,6 +552,7 @@ def test_native_sqlite_deadline_stops_vm_work_and_preserves_in_memory_database()
                 assert await _rows(database) == ()
                 await _assert_connection_restored(database)
                 repository.slow = False
+                _use_healthy_write_budget(recorder)
                 _offer(recorder)
                 await recorder.flush()
                 assert (await _rows(database))[0].requests == 1

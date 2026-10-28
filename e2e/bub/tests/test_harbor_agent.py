@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import importlib
 import os
 import shlex
@@ -20,8 +21,14 @@ import subprocess
 import sys
 from importlib.metadata import version
 from pathlib import Path
+from unittest.mock import AsyncMock
 
-from powercontext_e2e.harbor_agent import REMOTE_SOURCE_OVERRIDE, _install_bub_command
+import bub
+from bub.builtin.agent import Agent
+from bub.framework import BubFramework
+from bub_acp_server.client_tools import ACPClientToolRuntime, replace_builtin_tools
+
+from powercontext_e2e.harbor_agent import BUB_ACP_SERVER_VERSION, REMOTE_SOURCE_OVERRIDE, _install_bub_command
 from powercontext_e2e.harbor_codex import MCP_URL_REWRITE, plugin_mcp_url
 
 _SOURCE_OVERRIDE = Path(__file__).resolve().parents[1] / "source-overrides.txt"
@@ -73,3 +80,35 @@ def test_codex_plugin_accepts_the_server_url_the_harness_writes(monkeypatch, tmp
     plugin_settings = importlib.import_module("settings")
 
     assert plugin_settings.CodexPluginSettings().server_url == server_url
+
+
+def test_bub_and_acp_are_resolved_together_at_the_compatible_versions() -> None:
+    for powercontext in (False, True):
+        command = shlex.split(_install_bub_command(powercontext=powercontext))
+        assert f"bub=={version('bub')}" in command
+        adapter = command.index(f"bub-acp-server=={BUB_ACP_SERVER_VERSION}")
+        assert command[adapter - 1] == "--with"
+
+
+def test_native_bub_shell_command_reaches_acp_terminal_adapter(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(bub, "home", tmp_path / "home")
+    framework = BubFramework(config_file=tmp_path / "bub.toml")
+    framework.load_hooks()
+    agent = Agent(framework)
+    runtime = ACPClientToolRuntime()
+    terminal = AsyncMock(return_value="terminal completed")
+    monkeypatch.setattr(runtime, "bash", terminal)
+
+    async def scenario() -> None:
+        with replace_builtin_tools(runtime):
+            events = await agent.run_stream(
+                session_id="shell-compatibility",
+                prompt=",printf compatibility",
+                state={"_runtime_workspace": str(tmp_path)},
+            )
+            observed = [event async for event in events]
+        assert any(event.kind == "final" for event in observed)
+        assert terminal.await_count == 1
+        assert terminal.await_args.args[0] == "printf compatibility"
+
+    asyncio.run(scenario())
