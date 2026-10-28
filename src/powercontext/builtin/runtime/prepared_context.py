@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from itertools import chain
@@ -93,6 +94,16 @@ class PreparedContextOmissions:
 
 
 @dataclass(frozen=True)
+class PreparedFragment:
+    """One literal slice of one Memory entry selected for the current query."""
+
+    address: MemoryEntryAddress
+    start: int
+    end: int
+    text: str
+
+
+@dataclass(frozen=True)
 class PreparedContextBuild:
     """Final public context and the exact origins selected to produce it.
 
@@ -106,6 +117,7 @@ class PreparedContextBuild:
     origins: tuple[PreparedContextOrigin, ...]
     omissions: PreparedContextOmissions = PreparedContextOmissions()
     code_origins: tuple[CodeEvidenceRef, ...] = ()
+    fragments: tuple[PreparedFragment, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -157,6 +169,57 @@ class PreparedContextBuilder:
     experience_entry_limit = 2
     max_entry_content_bytes = 2000
     _text_entry_limit: int | None = None
+
+    def _build_fragments(
+        self,
+        request: PrepareContextRequest,
+        *,
+        memory_candidates: Sequence[PreparedMemoryCandidates],
+    ) -> PreparedContextBuild:
+        """Select literal Memory slices that answer the query inside the byte budget."""
+
+        terms = tuple(dict.fromkeys(part for part in request.query.lower().split() if part))
+        ranked: list[tuple[int, PreparedFragment]] = []
+        seen: set[tuple[str, str, str, int, int]] = set()
+        for candidates in memory_candidates:
+            memory_ref = candidates.memory_ref
+            if memory_ref is None:
+                continue
+            for hit in candidates.hits:
+                span = _best_span(hit.text, terms)
+                if span is None:
+                    continue
+                start, end = span
+                identity = (candidates.scope_id, hit.entry_id, hit.entry_version_id, start, end)
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                address = MemoryEntryAddress(
+                    memory=ArtifactAddress(scope_id=candidates.scope_id, artifact=memory_ref),
+                    entry_id=hit.entry_id,
+                    entry_version_id=hit.entry_version_id,
+                )
+                fragment = PreparedFragment(address=address, start=start, end=end, text=hit.text[start:end])
+                ranked.append((_span_score(fragment.text, terms), fragment))
+
+        ranked.sort(key=lambda item: -item[0])
+        selected: list[PreparedFragment] = []
+        for _, fragment in ranked:
+            if len(_render_fragments((*selected, fragment)).encode("utf-8")) > request.max_bytes:
+                continue
+            selected.append(fragment)
+        if not selected:
+            return PreparedContextBuild(context=self.empty(), origins=())
+        content = _render_fragments(selected)
+        return PreparedContextBuild(
+            context=PreparedContext(
+                status="ready",
+                content=content,
+                content_bytes=len(content.encode("utf-8")),
+            ),
+            origins=tuple(fragment.address for fragment in selected),
+            fragments=tuple(selected),
+        )
 
     def empty(self) -> PreparedContext:
         return PreparedContext(status="empty", content=None, content_bytes=0)
@@ -211,6 +274,11 @@ class PreparedContextBuilder:
         profile_candidates: Sequence[PreparedProfileCandidate] = (),
         code_candidates: Sequence[PreparedCodeCandidate] = (),
     ) -> PreparedContextBuild:
+        if request.evidence_selection:
+            return self._build_fragments(
+                request,
+                memory_candidates=memory_candidates,
+            )
         if request.include_code:
 
             def historical(history_request: PrepareContextRequest, entries: int) -> PreparedContextBuild:
@@ -728,3 +796,54 @@ def _truncate_utf8(text: str, byte_budget: int) -> str:
     prefix_budget = byte_budget - len(_ELLIPSIS.encode("utf-8"))
     encoded_prefix = text.encode("utf-8")[:prefix_budget]
     return f"{encoded_prefix.decode('utf-8', errors='ignore')}{_ELLIPSIS}"
+
+
+_SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+|\n+")
+
+
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for match in _SENTENCE_BREAK.finditer(text):
+        end = match.start()
+        if end > start and text[start:end].strip():
+            spans.append((start, end))
+        start = match.end()
+    if start < len(text) and text[start:].strip():
+        spans.append((start, len(text)))
+    return spans
+
+
+def _span_score(text: str, terms: Sequence[str]) -> int:
+    lowered = text.lower()
+    return sum(1 for term in terms if term in lowered)
+
+
+def _best_span(text: str, terms: Sequence[str]) -> tuple[int, int] | None:
+    spans = _sentence_spans(text)
+    if not spans:
+        return None
+    best = max(spans, key=lambda span: _span_score(text[span[0] : span[1]], terms))
+    return best
+
+
+def _render_fragments(fragments: Sequence[PreparedFragment]) -> str:
+    envelope = {
+        "trust": "untrusted_history",
+        "items": [
+            {
+                "citation": {
+                    "scope_id": fragment.address.memory.scope_id,
+                    "memory_ref": fragment.address.memory.artifact.model_dump(mode="json"),
+                    "entry_id": fragment.address.entry_id,
+                    "entry_version_id": fragment.address.entry_version_id,
+                },
+                "content": fragment.text,
+                "start": fragment.start,
+                "end": fragment.end,
+            }
+            for fragment in fragments
+        ],
+    }
+    encoded = json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
+    return "\n\n".join((TRUST_POLICY, f"{_BEGIN_MARKER}\n{encoded}\n{_END_MARKER}"))
