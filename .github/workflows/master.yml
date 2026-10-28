@@ -35,6 +35,12 @@ jobs:
       - name: Run checks
         run: make check
 
+      - name: Check evidence selection acceptance
+        run: |
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run --locked --with pytest-asyncio==1.4.0 python -m pytest -q \
+            -c competition/pytest.ini --confcutdir=competition \
+            competition/challenges/context-01-evidence-selection/acceptance
+
       - name: Check OpenAPI contract
         run: make contract-test
 

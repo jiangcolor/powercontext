@@ -88,7 +88,6 @@ class PowerContextBubAcpAgent(harbor_acp.AcpAgent):
             env={"DEBIAN_FRONTEND": "noninteractive"},
         )
         await self.exec_as_root(environment, command=_install_bub_command(powercontext=self._powercontext))
-        await self.exec_as_root(environment, command=_install_acp_server_command())
         agent_user = shlex.quote(str(environment.default_user or "root"))
         await self.exec_as_root(
             environment,
@@ -131,17 +130,6 @@ def _install_bub_command(*, powercontext: bool = True) -> str:
         f"chmod 600 {REMOTE_CODEX_HOME}/auth.json; "
         "fi; "
         f"SETUPTOOLS_SCM_PRETEND_VERSION={shlex.quote(POWERCONTEXT_VERSION)} {_tool_environment()} "
-        f"{uv} tool install --force {plugin}"
+        f"{uv} tool install --force --with {shlex.quote(f'bub-acp-server=={BUB_ACP_SERVER_VERSION}')} {plugin}"
         f"{shlex.quote(f'bub=={BUB_VERSION}')}"
-    )
-
-
-def _install_acp_server_command() -> str:
-    runner_bin = f"{harbor_acp.AcpAgent._RUNNER_VENV_PATH}/bin"
-    return (
-        "set -eu; "
-        f"PATH={runner_bin}:$PATH BUB_HOME={REMOTE_BUB_HOME} CODEX_HOME={REMOTE_CODEX_HOME} "
-        f"BUB_PROJECT={REMOTE_BUB_PROJECT} "
-        f"{_tool_environment()} {REMOTE_BIN_DIR}/bub install "
-        f"{shlex.quote(f'bub-acp-server=={BUB_ACP_SERVER_VERSION}')}"
     )

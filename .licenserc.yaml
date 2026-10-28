@@ -33,6 +33,8 @@ header:
       limitations under the License.
 
   paths-ignore:
+    # Organizer-owned evaluation assets retain their supplied attribution and licenses.
+    - 'competition/**'
     - '**/*.md'
     - '**/*.mdx'
     - '**/*.json'

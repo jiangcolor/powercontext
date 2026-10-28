@@ -178,6 +178,9 @@ extra-paths = [
 
 [tool.ty.src]
 exclude = [
+    # Organizer-owned challenge fixtures reference interfaces implemented by separate submissions.
+    # Run their acceptance tests explicitly with competition/pytest.ini.
+    "competition",
     # Optional Jupyter dependencies and notebook state are validated by notebooks-test.
     "examples/jupyter",
     "e2e/bub",
