@@ -1,0 +1,77 @@
+{
+  "method": "Real Dify Cloud UI via cua_repl. Narration is transcribed from observed accessibility text, line breaks normalized. No API-script run claimed.",
+  "app_url": "https://cloud.dify.ai/app/3a0c4883-08da-4441-b6fc-2120cc0969a3/workflow",
+  "dsl_version": "0.7.0",
+  "model": "qwen-plus",
+  "plugin": "langgenius/tongyi:0.2.26",
+  "reimport": {
+    "result": "succeeded in fresh application",
+    "nodes": 7,
+    "edges": 6,
+    "file": "time-lost-found.yml",
+    "configuration_note": "Test used an authenticated temporary HTTPS bridge; submitted DSL uses a portable local address and empty Secret. Reviewers must bind their own reachable address."
+  },
+  "runs": [
+    {
+      "observed_time": "2026-10-28 19:14:37 Asia/Shanghai",
+      "input": {
+        "player_code": "dify-final-review-20261028",
+        "action": "寄存",
+        "offering": "一只只在周一响的闹钟"
+      },
+      "result": "returned final workflow output",
+      "story_text_transcribed_from_UI": "【时间回收站·零点值班台】\n“叮——” 那只只在周一响的闹钟突然弹出半截弹簧，小声说：“我刚梦见自己被调成了周五……吓醒的。” 您递来的不是普通物件，是具时间焦虑症的金属生物。它拒绝校准，但会在您签收时偷偷把指针拨快三分钟——仿佛怕错过什么，又不敢承认。\n▶️ 请为它选择去向（下次输入「改写」，并附：自由／打工／朋友）\n▸ 自由：放它去追未被命名的星期八\n▸ 打工：派它去守夜班，专管凌晨四点的悔恨\n▸ 朋友：给它配个永远迷路的怀表，结成悖论搭子\n【回执·编号T-0001】\n物品：一只只在周一响的闹钟（含轻微时态 PTSD）\n状态：已登记，暂存于「未决定区」第三格\n备注：它刚用秒针在登记簿上画了半个问号\n下一步：请输入「改写」，并从「自由」「打工」「朋友」中择一提交。",
+      "receipt": "90adb111-1a14-4d16-a82c-b86694a4df42",
+      "memory_status": "empty",
+      "deterministic_guidance": "下一步：选择「改写」，输入「自由」「打工」「朋友」之一和你的理由。",
+      "checks": {
+        "correct_chapter": true,
+        "no_duplicate_template": true,
+        "expected_story_and_next_action": true
+      }
+    },
+    {
+      "observed_time": "2026-10-28 19:16:58 Asia/Shanghai",
+      "input": {
+        "player_code": "dify-final-review-20261028",
+        "action": "改写",
+        "offering": "朋友。我想让它有个愿意等它的人。"
+      },
+      "result": "returned final workflow output",
+      "story_text_transcribed_from_UI": "【第二幕：朋友】\n你把闹钟轻轻放在值班台边缘，它忽然“咔哒”一声，指针逆跳三格——然后安静下来，表蒙上浮出一行雾气小字：“……你今天是周几？” 我推了推眼镜，镜片后闪过半秒蓝光：“它只认周一，但刚刚，它在问你的日历。” 闹钟底座微微发热，像一颗刚学会忐忑的心。\n《时间回收站·临时托管回执》\n编号：T-002-MON-FRIEND\n物品：一只只在周一响的闹钟（当前待机，心跳频率同步于你左腕脉搏）\n备注：它开始记住你说话时的停顿长度。下次来，请带一句未说完的话。\n下一步玩法提示：请在下一轮输入“重逢”（可不填内容），我们将继续等待那个周一。",
+      "receipt": "11629160-c86c-443d-942b-8d8a3b60ebb5",
+      "memory_status": "ready",
+      "deterministic_guidance": "下一步：选择「重逢」，输入可留空；现在就能继续，不需要等待。",
+      "checks": {
+        "correct_chapter": true,
+        "no_duplicate_template": true,
+        "expected_story_and_next_action": true
+      }
+    },
+    {
+      "observed_time": "2026-10-28 19:19:51 Asia/Shanghai",
+      "input": {
+        "player_code": "dify-final-review-20261028",
+        "action": "重逢",
+        "offering": ""
+      },
+      "result": "returned final workflow output",
+      "story_text_transcribed_from_UI": "【第三幕：它为你留了一把椅子】\n你推开门时，整座「时间回收站」的指针都慢了半拍。那只只在周一响的闹钟正坐在窗边旧木椅上，表盘朝外，秒针轻轻叩着玻璃——嗒、嗒、嗒，像在数你走近的脚步。它没催你，只是把椅背微微前倾，仿佛等这姿势已等了很久。\n回执（碳素纸复写，字迹微洇）：\n物品：一只只在周一响的闹钟\n状态：已认领，且主动续约\n备注：它说“朋友”不是动词，是名词——是它终于能写的主语。\n下一步：故事已完成。若想开启新旅程，请换一张玩家卡，从第一幕重新开始。",
+      "receipt": "0e2df933-6726-4ac5-9dd4-3c3c0aee44ba",
+      "memory_status": "ready",
+      "deterministic_guidance": "故事已完成。换一张新玩家卡，即可寄存另一件物品。",
+      "checks": {
+        "correct_chapter": true,
+        "no_duplicate_template": true,
+        "expected_story_and_next_action": true
+      }
+    }
+  ],
+  "earlier_findings": "Earlier development run invented unsupported choices and native editor appended a template. Corrected system prompt and deterministic guidance, then rebuilt and reimported a clean DSL. Only the final reimport runs above are acceptance evidence.",
+  "tunnel": {
+    "tool": "cloudflared 2026.10.5",
+    "authorized_by_user": true,
+    "closed_after_test": true
+  },
+  "scope": "One full narrative branch verified in real Dify, as required by the official minimum; other branches verified against real backend/PowerContext, not claimed as Dify narration tests."
+}

@@ -1,0 +1,41 @@
+{
+  "observed_at": "2026-10-28 18:01 Asia/Shanghai",
+  "source": "Observed real Dify Cloud UI through cua_repl; transcribed fields",
+  "app_url": "https://cloud.dify.ai/app/675ef0fc-8a99-4efe-bb99-4f5007909613/workflow",
+  "import": {
+    "status": "succeeded",
+    "nodes": 7,
+    "edges": 6,
+    "checklist_after_model_binding": "no reported issue"
+  },
+  "standalone_llm_test": {
+    "node": "零点讲述这次来访",
+    "model": "qwen-plus",
+    "status": "成功",
+    "started_at": "2026-10-28 18:00:58",
+    "elapsed_seconds": 5.997,
+    "total_tokens": 631,
+    "input_type": "Manually supplied fictional first-chapter fixture. This run did NOT retrieve real PowerContext memory.",
+    "input": {
+      "scene": "第一幕：登记成功。给物品一个小怪癖，提供三个去向：自由、打工、朋友。请玩家下次选改写。",
+      "state": {
+        "item": "一只只在周一响的闹钟",
+        "chapter": 1,
+        "choice": null,
+        "ending": null
+      },
+      "memory": "首次来访，没有历史；不要伪造旧事。"
+    },
+    "visual_output_observation": "故事包含自由/打工/朋友三个去向、物品回执和下一步提问；输出在真实UI可见。未导出完整原始响应，未编造逐字全文。"
+  },
+  "not_yet_verified": [
+    "Full Dify-to-bridge-to-PowerContext flow",
+    "Reimport of actual exported model-bound DSL",
+    "Plugin and Dify Cloud version details",
+    "Full three-branch narration acceptance"
+  ],
+  "export_attempt": {
+    "action": "Confirmed export saved version in real Dify UI",
+    "result": "Browser window connection was lost before file completion could be verified; no successful export claimed"
+  }
+}
