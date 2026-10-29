@@ -33,6 +33,8 @@ header:
       limitations under the License.
 
   paths-ignore:
+    # Official challenge assets retain their upstream notices and dataset licenses.
+    - 'competition/**'
     - '**/*.md'
     - '**/*.mdx'
     - '**/*.json'
