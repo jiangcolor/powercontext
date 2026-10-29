@@ -3137,6 +3137,9 @@ class BuiltinRuntime:
         self.handoff = HandoffApplication(self)
         self.work = WorkApplication(self)
         self.memory = MemoryApplication(self)
+        from powercontext.builtin.runtime.source_lifecycle import LifecycleApplication
+
+        self.lifecycle = LifecycleApplication(self)
         self.topic_memory = TopicMemoryApplication(self)
         self.records = RecordApplication(self)
         self.prompts = PromptApplication(self)
