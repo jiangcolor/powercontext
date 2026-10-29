@@ -1,0 +1,3 @@
+powercontext[builtin]==1.2.0
+pylibseekdb==1.4.0.post1
+PyMySQL==1.2.3

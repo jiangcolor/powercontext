@@ -1,0 +1,20 @@
+{
+  "provider": "MiniMax",
+  "model": "MiniMax-M2.7",
+  "response_id": "073266cdb31315f73c39abd248845ccc",
+  "usage": {
+    "total_tokens": 2539,
+    "total_characters": 0,
+    "prompt_tokens": 2049,
+    "completion_tokens": 490,
+    "completion_tokens_details": {
+      "reasoning_tokens": 314
+    },
+    "prompt_tokens_details": {
+      "cached_tokens": 197
+    }
+  },
+  "content": "```python\n\"\"\"Small ticket-listing service.\"\"\"\n\n\ndef list_tickets(records, *, status=None, limit=10):\n    \"\"\"Return newest tickets without changing the caller's data.\"\"\"\n    if type(limit) is not int or limit < 0:\n        raise ValueError(\"limit must be a non-negative integer\")\n    if status is not None and status not in (\"open\", \"in_progress\", \"closed\"):\n        raise ValueError(\"status must be one of: open, in_progress, closed\")\n\n    if status is None:\n        filtered_records = list(records)\n    else:\n        filtered_records = [row for row in records if row[\"status\"] == status]\n\n    return sorted(\n        filtered_records,\n        key=lambda row: (row[\"created_at\"], row[\"id\"]),\n        reverse=True,\n    )[:limit]\n```",
+  "source_sha256": "0964f9ee54616fbcd736b07dddaef96dbb77897ca9bcf464900e605076522498",
+  "context_sha256": "a0018e7c575d705351317f82c0a724688141c4d39d5cf9da00db2ba4b62cad87"
+}

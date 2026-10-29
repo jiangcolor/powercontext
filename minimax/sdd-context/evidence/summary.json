@@ -1,0 +1,14 @@
+{
+  "overall_local_result": "passed",
+  "formal_judging": "not_submitted_yet",
+  "provider": "MiniMax",
+  "model": "MiniMax-M2.7",
+  "response_id": "073266cdb31315f73c39abd248845ccc",
+  "before_target_exit": 1,
+  "before_regression_exit": 0,
+  "after_target_exit": 0,
+  "after_regression_exit": 0,
+  "same_test_sha256": "a6393d00410b49664e39099f31449127b0ca0ab21f9c9318c676b909c4ce6f14",
+  "offline_validation": "passed",
+  "clean_state_replay": "passed"
+}

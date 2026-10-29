@@ -1,0 +1,32 @@
+{
+  "phase": "after",
+  "code_version_sha256": "0964f9ee54616fbcd736b07dddaef96dbb77897ca9bcf464900e605076522498",
+  "results": {
+    "TargetStatusTests": {
+      "command": [
+        "/Users/jiao/Documents/Codex/2026-10-29/powercontext-task11/work/minimax/.venv/bin/python",
+        "/Users/jiao/Documents/Codex/2026-10-29/powercontext-task11/work/minimax/project/minimax/sdd-context/demo/tests/test_tickets.py",
+        "-v",
+        "TargetStatusTests"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_each_status (__main__.TargetStatusTests.test_each_status) ... ok\ntest_filter_before_limit (__main__.TargetStatusTests.test_filter_before_limit) ... ok\ntest_no_match (__main__.TargetStatusTests.test_no_match) ... ok\ntest_reject_invalid_even_empty (__main__.TargetStatusTests.test_reject_invalid_even_empty) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n",
+      "source_sha256": "0964f9ee54616fbcd736b07dddaef96dbb77897ca9bcf464900e605076522498",
+      "tests_sha256": "a6393d00410b49664e39099f31449127b0ca0ab21f9c9318c676b909c4ce6f14"
+    },
+    "RegressionTests": {
+      "command": [
+        "/Users/jiao/Documents/Codex/2026-10-29/powercontext-task11/work/minimax/.venv/bin/python",
+        "/Users/jiao/Documents/Codex/2026-10-29/powercontext-task11/work/minimax/project/minimax/sdd-context/demo/tests/test_tickets.py",
+        "-v",
+        "RegressionTests"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_inputs_unchanged (__main__.RegressionTests.test_inputs_unchanged) ... ok\ntest_invalid_limits (__main__.RegressionTests.test_invalid_limits) ... ok\ntest_stable_ties (__main__.RegressionTests.test_stable_ties) ... ok\ntest_unfiltered_and_limit (__main__.RegressionTests.test_unfiltered_and_limit) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n",
+      "source_sha256": "0964f9ee54616fbcd736b07dddaef96dbb77897ca9bcf464900e605076522498",
+      "tests_sha256": "a6393d00410b49664e39099f31449127b0ca0ab21f9c9318c676b909c4ce6f14"
+    }
+  }
+}

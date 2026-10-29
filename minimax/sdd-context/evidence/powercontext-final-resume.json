@@ -1,0 +1,48 @@
+{
+  "operation": "read",
+  "pid": 16690,
+  "scope_id": "scp_4wvp2jm219jd1c2d0b70wfj3rg",
+  "states": [
+    {
+      "recorded_at": "2026-10-29T11:36:57.308160+00:00",
+      "task": "Implement ticket status filter; preserve newest first order, limit and input nonmutation compatibility.",
+      "done": "Imported specifications, baseline code and immutable tests; baseline target fails and 4 regression tests pass.",
+      "todo": "Use real MiniMax to implement the status filter; run unchanged tests on the resulting snapshot.",
+      "validation": "before-target=failed; before-regression=passed"
+    },
+    {
+      "recorded_at": "2026-10-29T11:55:30.916639+00:00",
+      "task": "Implement ticket status filter; preserve newest first order, limit and input nonmutation compatibility.",
+      "done": "MiniMax implemented exact status filtering; 4 target tests and 4 regression tests passed.",
+      "todo": "None",
+      "validation": "after-target=passed; after-regression=passed; same tests SHA256 before and after"
+    }
+  ],
+  "latest": {
+    "recorded_at": "2026-10-29T11:55:30.916639+00:00",
+    "task": "Implement ticket status filter; preserve newest first order, limit and input nonmutation compatibility.",
+    "done": "MiniMax implemented exact status filtering; 4 target tests and 4 regression tests passed.",
+    "todo": "None",
+    "validation": "after-target=passed; after-regression=passed; same tests SHA256 before and after"
+  },
+  "citations": [
+    {
+      "memory_ref": {
+        "family": "memory",
+        "artifact_id": "memory",
+        "revision": 2
+      },
+      "entry_id": "mem_ent_305bb2d926b0413dbca375668cdd5180",
+      "entry_version_id": "mem_ver_7a0fc472974c41b389e07aad3aa6f9ac"
+    },
+    {
+      "memory_ref": {
+        "family": "memory",
+        "artifact_id": "memory",
+        "revision": 2
+      },
+      "entry_id": "mem_ent_2e8109d9c5f24d0590562ae51e342408",
+      "entry_version_id": "mem_ver_96a53cae71b94ba9bf3a3bdeb941b7da"
+    }
+  ]
+}

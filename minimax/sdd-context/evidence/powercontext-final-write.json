@@ -1,0 +1,17 @@
+{
+  "operation": "write",
+  "pid": 16688,
+  "scope_id": "scp_4wvp2jm219jd1c2d0b70wfj3rg",
+  "memory_ref": {
+    "family": "memory",
+    "artifact_id": "memory",
+    "revision": 2
+  },
+  "state": {
+    "recorded_at": "2026-10-29T11:55:30.916639+00:00",
+    "task": "Implement ticket status filter; preserve newest first order, limit and input nonmutation compatibility.",
+    "done": "MiniMax implemented exact status filtering; 4 target tests and 4 regression tests passed.",
+    "todo": "None",
+    "validation": "after-target=passed; after-regression=passed; same tests SHA256 before and after"
+  }
+}
