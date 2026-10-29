@@ -1,0 +1,3079 @@
+{
+  "timestamp": "2026-10-29T12:53:07.796Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "hardwareConcurrency": 10,
+  "model": "Xenova/all-MiniLM-L6-v2",
+  "corpusSize": 16,
+  "queryCount": 16,
+  "repeats": 3,
+  "runs": [
+    {
+      "device": "wasm",
+      "dtype": "fp32",
+      "batchSize": 1,
+      "config": {
+        "backend": "wasm",
+        "dtype": "fp32",
+        "reason": "手动验证 WASM 路径",
+        "model": "Xenova/all-MiniLM-L6-v2",
+        "loadMs": 338.60000002384186
+      },
+      "collection": "bench_1793278388150_0",
+      "imports": [
+        {
+          "embedMs": 259.2000000178814,
+          "writeMs": 48.976625000010245,
+          "refreshMs": 415.9317920000176,
+          "totalMs": 778.9000000059605,
+          "count": 16
+        },
+        {
+          "embedMs": 234.90000000596046,
+          "writeMs": 193.70483299996704,
+          "refreshMs": 310.5729580000043,
+          "totalMs": 750.5999999940395,
+          "count": 16
+        },
+        {
+          "embedMs": 247.2000000178814,
+          "writeMs": 15.696457999991253,
+          "refreshMs": 315.06158300000243,
+          "totalMs": 586.6999999880791,
+          "count": 16
+        }
+      ],
+      "measurements": [
+        {
+          "rep": 0,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 14.299999982118607,
+          "searchMs": 10.850207999988925,
+          "endToEndMs": 31.900000005960464
+        },
+        {
+          "rep": 0,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 9,
+          "searchMs": 5.3455420000245795,
+          "endToEndMs": 19.5
+        },
+        {
+          "rep": 0,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "quality",
+            "vector",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 7.200000017881393,
+          "searchMs": 4.35837500001071,
+          "endToEndMs": 15.5
+        },
+        {
+          "rep": 0,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.9000000059604645,
+          "searchMs": 4.281541999953333,
+          "endToEndMs": 14.599999994039536
+        },
+        {
+          "rep": 0,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.5,
+          "searchMs": 4.01029100001324,
+          "endToEndMs": 15.300000011920929
+        },
+        {
+          "rep": 0,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 8.199999988079071,
+          "searchMs": 4.205750000022817,
+          "endToEndMs": 15.699999988079071
+        },
+        {
+          "rep": 0,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 6,
+          "searchMs": 4.066541000036523,
+          "endToEndMs": 13.300000011920929
+        },
+        {
+          "rep": 0,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.5,
+          "searchMs": 3.4815830000443384,
+          "endToEndMs": 14.5
+        },
+        {
+          "rep": 0,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5,
+          "searchMs": 3.848166999989189,
+          "endToEndMs": 12
+        },
+        {
+          "rep": 0,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 6.5,
+          "searchMs": 2.9935829999740236,
+          "endToEndMs": 12.699999988079071
+        },
+        {
+          "rep": 0,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.700000017881393,
+          "searchMs": 3.227541000000201,
+          "endToEndMs": 14.5
+        },
+        {
+          "rep": 0,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.699999988079071,
+          "searchMs": 3.160749999980908,
+          "endToEndMs": 12.100000023841858
+        },
+        {
+          "rep": 0,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "gpu",
+            "quant"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.5999999940395355,
+          "searchMs": 3.5712080000084825,
+          "endToEndMs": 13.199999988079071
+        },
+        {
+          "rep": 0,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.800000011920929,
+          "searchMs": 3.9974999999976717,
+          "endToEndMs": 12.800000011920929
+        },
+        {
+          "rep": 0,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "backup",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.799999982118607,
+          "searchMs": 3.5775830000056885,
+          "endToEndMs": 12.799999982118607
+        },
+        {
+          "rep": 0,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "hybrid",
+            "quality",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 5.4000000059604645,
+          "searchMs": 3.376709000032861,
+          "endToEndMs": 12
+        },
+        {
+          "rep": 1,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6,
+          "searchMs": 3.901499999978114,
+          "endToEndMs": 13.200000017881393
+        },
+        {
+          "rep": 1,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.699999988079071,
+          "searchMs": 3.5693750000209548,
+          "endToEndMs": 12.900000005960464
+        },
+        {
+          "rep": 1,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "quality",
+            "vector",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.5999999940395355,
+          "searchMs": 3.7676250000367872,
+          "endToEndMs": 12.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.0999999940395355,
+          "searchMs": 3.070917000004556,
+          "endToEndMs": 11.199999988079071
+        },
+        {
+          "rep": 1,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.9000000059604645,
+          "searchMs": 3.5411670000175945,
+          "endToEndMs": 13.100000023841858
+        },
+        {
+          "rep": 1,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6,
+          "searchMs": 3.320666999963578,
+          "endToEndMs": 13
+        },
+        {
+          "rep": 1,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.5999999940395355,
+          "searchMs": 3.3389590000151657,
+          "endToEndMs": 11.199999988079071
+        },
+        {
+          "rep": 1,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.800000011920929,
+          "searchMs": 3.230582999996841,
+          "endToEndMs": 13
+        },
+        {
+          "rep": 1,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.700000017881393,
+          "searchMs": 3.5259590000496246,
+          "endToEndMs": 11.599999994039536
+        },
+        {
+          "rep": 1,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 5.200000017881393,
+          "searchMs": 2.7845000000088476,
+          "endToEndMs": 10.800000011920929
+        },
+        {
+          "rep": 1,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5,
+          "searchMs": 2.561959000013303,
+          "endToEndMs": 9.400000005960464
+        },
+        {
+          "rep": 1,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5,
+          "searchMs": 2.9048339999862947,
+          "endToEndMs": 10.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "gpu",
+            "quant"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5999999940395355,
+          "searchMs": 2.7448749999748543,
+          "endToEndMs": 9.699999988079071
+        },
+        {
+          "rep": 1,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.4000000059604645,
+          "searchMs": 2.8773330000112765,
+          "endToEndMs": 11
+        },
+        {
+          "rep": 1,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "backup",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.9000000059604645,
+          "searchMs": 2.8258749999804422,
+          "endToEndMs": 10.300000011920929
+        },
+        {
+          "rep": 1,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "hybrid",
+            "quality",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.5999999940395355,
+          "searchMs": 2.891124999965541,
+          "endToEndMs": 10
+        },
+        {
+          "rep": 2,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.9000000059604645,
+          "searchMs": 3.035415999998804,
+          "endToEndMs": 10.5
+        },
+        {
+          "rep": 2,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5,
+          "searchMs": 2.9870840000221506,
+          "endToEndMs": 10.699999988079071
+        },
+        {
+          "rep": 2,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "quality",
+            "vector",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 3.800000011920929,
+          "searchMs": 2.7040000000270084,
+          "endToEndMs": 9
+        },
+        {
+          "rep": 2,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4,
+          "searchMs": 2.2029169999877922,
+          "endToEndMs": 8.800000011920929
+        },
+        {
+          "rep": 2,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.300000011920929,
+          "searchMs": 2.601208999985829,
+          "endToEndMs": 9.300000011920929
+        },
+        {
+          "rep": 2,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5,
+          "searchMs": 3.2631249999976717,
+          "endToEndMs": 10.899999976158142
+        },
+        {
+          "rep": 2,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 3.9000000059604645,
+          "searchMs": 2.6575420000008307,
+          "endToEndMs": 8.800000011920929
+        },
+        {
+          "rep": 2,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.200000017881393,
+          "searchMs": 3.3833749999757856,
+          "endToEndMs": 11.300000011920929
+        },
+        {
+          "rep": 2,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 3.4000000059604645,
+          "searchMs": 2.17025000002468,
+          "endToEndMs": 7.799999982118607
+        },
+        {
+          "rep": 2,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 4.9000000059604645,
+          "searchMs": 2.6051250000018626,
+          "endToEndMs": 9.800000011920929
+        },
+        {
+          "rep": 2,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.0999999940395355,
+          "searchMs": 2.7345830000122078,
+          "endToEndMs": 9.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.300000011920929,
+          "searchMs": 2.9109170000301674,
+          "endToEndMs": 9.300000011920929
+        },
+        {
+          "rep": 2,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "gpu",
+            "quant"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.200000017881393,
+          "searchMs": 2.765999999945052,
+          "endToEndMs": 9.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.199999988079071,
+          "searchMs": 2.5178750000195578,
+          "endToEndMs": 9.600000023841858
+        },
+        {
+          "rep": 2,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "backup",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5,
+          "searchMs": 2.4081670000450686,
+          "endToEndMs": 9.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "hybrid",
+            "quality",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.300000011920929,
+          "searchMs": 2.64795899996534,
+          "endToEndMs": 8.800000011920929
+        }
+      ],
+      "median": {
+        "documentEmbedMs": 247.2000000178814,
+        "writeMs": 48.976625000010245,
+        "refreshMs": 315.06158300000243,
+        "searchMs": 3.227541000000201,
+        "endToEndMs": 11.300000011920929
+      },
+      "recallAt3": 0.9375,
+      "ndcgAt3": 0.8682993287946483
+    },
+    {
+      "device": "wasm",
+      "dtype": "q8",
+      "batchSize": 1,
+      "config": {
+        "backend": "wasm",
+        "dtype": "q8",
+        "reason": "手动验证 WASM 路径",
+        "model": "Xenova/all-MiniLM-L6-v2",
+        "loadMs": 61.29999998211861
+      },
+      "collection": "bench_1793278390911_1",
+      "imports": [
+        {
+          "embedMs": 233.90000000596046,
+          "writeMs": 53.479249999974854,
+          "refreshMs": 315.52658299996983,
+          "totalMs": 623.9000000059605,
+          "count": 16
+        },
+        {
+          "embedMs": 273,
+          "writeMs": 195.39391700003762,
+          "refreshMs": 312.639749999973,
+          "totalMs": 790.3000000119209,
+          "count": 16
+        },
+        {
+          "embedMs": 269.09999999403954,
+          "writeMs": 14.834333000006154,
+          "refreshMs": 309.1153330000234,
+          "totalMs": 603.6999999880791,
+          "count": 16
+        }
+      ],
+      "measurements": [
+        {
+          "rep": 0,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 14.800000011920929,
+          "searchMs": 11.701624999986961,
+          "endToEndMs": 33.400000005960464
+        },
+        {
+          "rep": 0,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 13,
+          "searchMs": 5.8452500000130385,
+          "endToEndMs": 24.69999998807907
+        },
+        {
+          "rep": 0,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "vector",
+            "hybrid",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 8.400000005960464,
+          "searchMs": 4.71937499998603,
+          "endToEndMs": 18
+        },
+        {
+          "rep": 0,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.600000023841858,
+          "searchMs": 4.302082999958657,
+          "endToEndMs": 14.900000005960464
+        },
+        {
+          "rep": 0,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.100000023841858,
+          "searchMs": 4.749415999976918,
+          "endToEndMs": 15.300000011920929
+        },
+        {
+          "rep": 0,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.4000000059604645,
+          "searchMs": 4.533540999982506,
+          "endToEndMs": 16.099999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 6,
+          "searchMs": 4.810792000032961,
+          "endToEndMs": 14.900000005960464
+        },
+        {
+          "rep": 0,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.4000000059604645,
+          "searchMs": 4.322042000014335,
+          "endToEndMs": 15.099999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.0999999940395355,
+          "searchMs": 4.622709000017494,
+          "endToEndMs": 13.199999988079071
+        },
+        {
+          "rep": 0,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 7,
+          "searchMs": 4.938458000018727,
+          "endToEndMs": 15.599999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.199999988079071,
+          "searchMs": 4.210709000006318,
+          "endToEndMs": 13.799999982118607
+        },
+        {
+          "rep": 0,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6,
+          "searchMs": 4.127665999985766,
+          "endToEndMs": 13.5
+        },
+        {
+          "rep": 0,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "gpu",
+            "quant"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.100000023841858,
+          "searchMs": 4.478457999997772,
+          "endToEndMs": 13.800000011920929
+        },
+        {
+          "rep": 0,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.800000011920929,
+          "searchMs": 4.482209000037983,
+          "endToEndMs": 14.700000017881393
+        },
+        {
+          "rep": 0,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "collection",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.299999982118607,
+          "searchMs": 4.229374999995343,
+          "endToEndMs": 13.899999976158142
+        },
+        {
+          "rep": 0,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "quality",
+            "hybrid",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.800000011920929,
+          "searchMs": 4.368042000045534,
+          "endToEndMs": 13.400000005960464
+        },
+        {
+          "rep": 1,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.5999999940395355,
+          "searchMs": 4.179290999949444,
+          "endToEndMs": 14.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.600000023841858,
+          "searchMs": 4.623459000024013,
+          "endToEndMs": 15
+        },
+        {
+          "rep": 1,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "vector",
+            "hybrid",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5,
+          "searchMs": 3.2200830000219867,
+          "endToEndMs": 11.400000005960464
+        },
+        {
+          "rep": 1,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.200000017881393,
+          "searchMs": 3.513042000005953,
+          "endToEndMs": 11.5
+        },
+        {
+          "rep": 1,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.300000011920929,
+          "searchMs": 2.8448749999515712,
+          "endToEndMs": 11.900000005960464
+        },
+        {
+          "rep": 1,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.4000000059604645,
+          "searchMs": 3.713791999965906,
+          "endToEndMs": 13.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 5,
+          "searchMs": 3.0621249999967404,
+          "endToEndMs": 11.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.899999976158142,
+          "searchMs": 3.535459000035189,
+          "endToEndMs": 13.300000011920929
+        },
+        {
+          "rep": 1,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.0999999940395355,
+          "searchMs": 3.815208000014536,
+          "endToEndMs": 11.800000011920929
+        },
+        {
+          "rep": 1,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 6.0999999940395355,
+          "searchMs": 2.9898749999701977,
+          "endToEndMs": 12.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.300000011920929,
+          "searchMs": 2.4619999999995343,
+          "endToEndMs": 10.199999988079071
+        },
+        {
+          "rep": 1,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.399999976158142,
+          "searchMs": 2.5829170000506565,
+          "endToEndMs": 10.900000005960464
+        },
+        {
+          "rep": 1,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "gpu",
+            "quant"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.300000011920929,
+          "searchMs": 2.2954160000081174,
+          "endToEndMs": 10.699999988079071
+        },
+        {
+          "rep": 1,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6,
+          "searchMs": 3.297791999997571,
+          "endToEndMs": 12.200000017881393
+        },
+        {
+          "rep": 1,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "collection",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.5999999940395355,
+          "searchMs": 3.0253329999977723,
+          "endToEndMs": 11.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "quality",
+            "hybrid",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.200000017881393,
+          "searchMs": 2.6013329999987036,
+          "endToEndMs": 10.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.700000017881393,
+          "searchMs": 2.6988330000313,
+          "endToEndMs": 10.600000023841858
+        },
+        {
+          "rep": 2,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.699999988079071,
+          "searchMs": 3.211334000050556,
+          "endToEndMs": 11.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "vector",
+            "hybrid",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.199999988079071,
+          "searchMs": 2.879583999980241,
+          "endToEndMs": 9.400000005960464
+        },
+        {
+          "rep": 2,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5,
+          "searchMs": 2.576291000004858,
+          "endToEndMs": 9.400000005960464
+        },
+        {
+          "rep": 2,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.5999999940395355,
+          "searchMs": 2.8276670000050217,
+          "endToEndMs": 10.899999976158142
+        },
+        {
+          "rep": 2,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6,
+          "searchMs": 3.1252080000122078,
+          "endToEndMs": 11.600000023841858
+        },
+        {
+          "rep": 2,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.699999988079071,
+          "searchMs": 2.7054580000112765,
+          "endToEndMs": 9.799999982118607
+        },
+        {
+          "rep": 2,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.5,
+          "searchMs": 2.898417000018526,
+          "endToEndMs": 11.800000011920929
+        },
+        {
+          "rep": 2,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.299999982118607,
+          "searchMs": 2.6148749999701977,
+          "endToEndMs": 9.099999994039536
+        },
+        {
+          "rep": 2,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 5.9000000059604645,
+          "searchMs": 3.0235410000314005,
+          "endToEndMs": 11.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.899999976158142,
+          "searchMs": 2.5799580000457354,
+          "endToEndMs": 9.699999988079071
+        },
+        {
+          "rep": 2,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.300000011920929,
+          "searchMs": 2.8099579999689013,
+          "endToEndMs": 10.599999994039536
+        },
+        {
+          "rep": 2,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "gpu",
+            "quant"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.300000011920929,
+          "searchMs": 3.1935409999568947,
+          "endToEndMs": 10.900000005960464
+        },
+        {
+          "rep": 2,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6,
+          "searchMs": 2.7934589999495074,
+          "endToEndMs": 11.199999988079071
+        },
+        {
+          "rep": 2,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "collection",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.299999982118607,
+          "searchMs": 2.8484170000301674,
+          "endToEndMs": 10.700000017881393
+        },
+        {
+          "rep": 2,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "quality",
+            "hybrid",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.199999988079071,
+          "searchMs": 3.3317089999909513,
+          "endToEndMs": 10.900000005960464
+        }
+      ],
+      "median": {
+        "documentEmbedMs": 269.09999999403954,
+        "writeMs": 53.479249999974854,
+        "refreshMs": 312.639749999973,
+        "searchMs": 3.297791999997571,
+        "endToEndMs": 11.800000011920929
+      },
+      "recallAt3": 0.9375,
+      "ndcgAt3": 0.9144331095982161
+    },
+    {
+      "device": "wasm",
+      "dtype": "q8",
+      "batchSize": 8,
+      "config": {
+        "backend": "wasm",
+        "dtype": "q8",
+        "reason": "手动验证 WASM 路径",
+        "model": "Xenova/all-MiniLM-L6-v2",
+        "loadMs": 46.599999994039536
+      },
+      "collection": "bench_1793278393604_2",
+      "imports": [
+        {
+          "embedMs": 262.69999998807907,
+          "writeMs": 51.95750000001863,
+          "refreshMs": 418.7646250000107,
+          "totalMs": 755.5,
+          "count": 16
+        },
+        {
+          "embedMs": 292.59999999403954,
+          "writeMs": 187.61550000001444,
+          "refreshMs": 315.7801660000114,
+          "totalMs": 807.1999999880791,
+          "count": 16
+        },
+        {
+          "embedMs": 293.39999997615814,
+          "writeMs": 16.223208000010345,
+          "refreshMs": 415.6292090000352,
+          "totalMs": 735.7000000178814,
+          "count": 16
+        }
+      ],
+      "measurements": [
+        {
+          "rep": 0,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 15.800000011920929,
+          "searchMs": 10.824041999992914,
+          "endToEndMs": 33.69999998807907
+        },
+        {
+          "rep": 0,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 12.200000017881393,
+          "searchMs": 5.45108299999265,
+          "endToEndMs": 22.599999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "quality",
+            "vector",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 8.399999976158142,
+          "searchMs": 5.214416999951936,
+          "endToEndMs": 18.5
+        },
+        {
+          "rep": 0,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.699999988079071,
+          "searchMs": 4.896000000007916,
+          "endToEndMs": 16.299999982118607
+        },
+        {
+          "rep": 0,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.700000017881393,
+          "searchMs": 4.774207999987993,
+          "endToEndMs": 15.599999994039536
+        },
+        {
+          "rep": 0,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.799999982118607,
+          "searchMs": 5.3560839999699965,
+          "endToEndMs": 16.700000017881393
+        },
+        {
+          "rep": 0,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 6.199999988079071,
+          "searchMs": 4.501374999992549,
+          "endToEndMs": 14.099999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7.9000000059604645,
+          "searchMs": 4.191749999998137,
+          "endToEndMs": 15.5
+        },
+        {
+          "rep": 0,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.300000011920929,
+          "searchMs": 4.37504200002877,
+          "endToEndMs": 12.900000005960464
+        },
+        {
+          "rep": 0,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 6.9000000059604645,
+          "searchMs": 4.3921250000130385,
+          "endToEndMs": 14.299999982118607
+        },
+        {
+          "rep": 0,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.100000023841858,
+          "searchMs": 5.218832999991719,
+          "endToEndMs": 14.600000023841858
+        },
+        {
+          "rep": 0,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.4000000059604645,
+          "searchMs": 3.9827080000541173,
+          "endToEndMs": 14.099999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "quant",
+            "gpu"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.299999982118607,
+          "searchMs": 3.7918749999953434,
+          "endToEndMs": 13.5
+        },
+        {
+          "rep": 0,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 7,
+          "searchMs": 4.3575000000419095,
+          "endToEndMs": 14.799999982118607
+        },
+        {
+          "rep": 0,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "backup",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.299999982118607,
+          "searchMs": 3.9045420000329614,
+          "endToEndMs": 14.100000023841858
+        },
+        {
+          "rep": 0,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "hybrid",
+            "quality",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 5.699999988079071,
+          "searchMs": 3.454708000004757,
+          "endToEndMs": 12.199999988079071
+        },
+        {
+          "rep": 1,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.5,
+          "searchMs": 3.3584999999729916,
+          "endToEndMs": 12.900000005960464
+        },
+        {
+          "rep": 1,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.5,
+          "searchMs": 3.5694580000126734,
+          "endToEndMs": 13.199999988079071
+        },
+        {
+          "rep": 1,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "quality",
+            "vector",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 5.200000017881393,
+          "searchMs": 3.5042499999981374,
+          "endToEndMs": 12
+        },
+        {
+          "rep": 1,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.4000000059604645,
+          "searchMs": 3.1971250000060536,
+          "endToEndMs": 11.700000017881393
+        },
+        {
+          "rep": 1,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.299999982118607,
+          "searchMs": 3.33383399999002,
+          "endToEndMs": 12.799999982118607
+        },
+        {
+          "rep": 1,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.9000000059604645,
+          "searchMs": 3.042249999998603,
+          "endToEndMs": 12.800000011920929
+        },
+        {
+          "rep": 1,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 5.4000000059604645,
+          "searchMs": 3.18587500002468,
+          "endToEndMs": 11.199999988079071
+        },
+        {
+          "rep": 1,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.399999976158142,
+          "searchMs": 2.7470420000026934,
+          "endToEndMs": 11.800000011920929
+        },
+        {
+          "rep": 1,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5999999940395355,
+          "searchMs": 2.53166700003203,
+          "endToEndMs": 9.900000005960464
+        },
+        {
+          "rep": 1,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 6.0999999940395355,
+          "searchMs": 3.101749999972526,
+          "endToEndMs": 11.799999982118607
+        },
+        {
+          "rep": 1,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.0999999940395355,
+          "searchMs": 3.0114579999935813,
+          "endToEndMs": 10.699999988079071
+        },
+        {
+          "rep": 1,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5,
+          "searchMs": 2.6781670000054874,
+          "endToEndMs": 9.900000005960464
+        },
+        {
+          "rep": 1,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "quant",
+            "gpu"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.0999999940395355,
+          "searchMs": 2.7574579999782145,
+          "endToEndMs": 10.400000005960464
+        },
+        {
+          "rep": 1,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.9000000059604645,
+          "searchMs": 2.7389170000096783,
+          "endToEndMs": 10.799999982118607
+        },
+        {
+          "rep": 1,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "backup",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.600000023841858,
+          "searchMs": 2.7623749999911524,
+          "endToEndMs": 10.600000023841858
+        },
+        {
+          "rep": 1,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "hybrid",
+            "quality",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.899999976158142,
+          "searchMs": 2.358665999956429,
+          "endToEndMs": 9.5
+        },
+        {
+          "rep": 2,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "chunk",
+            "privacy"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.299999982118607,
+          "searchMs": 2.836040999973193,
+          "endToEndMs": 10.5
+        },
+        {
+          "rep": 2,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "password",
+            "bread",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.5999999940395355,
+          "searchMs": 2.83037499996135,
+          "endToEndMs": 10.5
+        },
+        {
+          "rep": 2,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "quality",
+            "vector",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.0999999940395355,
+          "searchMs": 2.485917000041809,
+          "endToEndMs": 8.5
+        },
+        {
+          "rep": 2,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.5999999940395355,
+          "searchMs": 2.6850829999893904,
+          "endToEndMs": 9.399999976158142
+        },
+        {
+          "rep": 2,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.300000011920929,
+          "searchMs": 2.52983299997868,
+          "endToEndMs": 9.900000005960464
+        },
+        {
+          "rep": 2,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "cache",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.700000017881393,
+          "searchMs": 2.3186659999773838,
+          "endToEndMs": 10.099999994039536
+        },
+        {
+          "rep": 2,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "chunk",
+            "batch",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 4.399999976158142,
+          "searchMs": 2.7103749999660067,
+          "endToEndMs": 9.300000011920929
+        },
+        {
+          "rep": 2,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "index",
+            "chunk",
+            "vector"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 6.200000017881393,
+          "searchMs": 2.8247499999706633,
+          "endToEndMs": 11.099999994039536
+        },
+        {
+          "rep": 2,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "hybrid"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.300000011920929,
+          "searchMs": 2.173209000029601,
+          "endToEndMs": 8.5
+        },
+        {
+          "rep": 2,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "bread",
+            "train",
+            "password"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 5.700000017881393,
+          "searchMs": 2.769999999960419,
+          "endToEndMs": 10.5
+        },
+        {
+          "rep": 2,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "train",
+            "gpu",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.9000000059604645,
+          "searchMs": 2.356249999953434,
+          "endToEndMs": 9.300000011920929
+        },
+        {
+          "rep": 2,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "bread",
+            "cache",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.9000000059604645,
+          "searchMs": 2.4185839999699965,
+          "endToEndMs": 9.400000005960464
+        },
+        {
+          "rep": 2,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "cache",
+            "quant",
+            "gpu"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 4.9000000059604645,
+          "searchMs": 2.869750000012573,
+          "endToEndMs": 9.899999976158142
+        },
+        {
+          "rep": 2,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.800000011920929,
+          "searchMs": 2.805207999947015,
+          "endToEndMs": 10.600000023841858
+        },
+        {
+          "rep": 2,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "chunk",
+            "backup",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 5.299999982118607,
+          "searchMs": 2.679749999952037,
+          "endToEndMs": 10.099999994039536
+        },
+        {
+          "rep": 2,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "hybrid",
+            "quality",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 5.0999999940395355,
+          "searchMs": 3.1274170000106096,
+          "endToEndMs": 10.299999982118607
+        }
+      ],
+      "median": {
+        "documentEmbedMs": 292.59999999403954,
+        "writeMs": 51.95750000001863,
+        "refreshMs": 415.6292090000352,
+        "searchMs": 3.101749999972526,
+        "endToEndMs": 11.700000017881393
+      },
+      "recallAt3": 0.9375,
+      "ndcgAt3": 0.8682993287946483
+    },
+    {
+      "device": "auto",
+      "dtype": "q8",
+      "batchSize": 8,
+      "config": {
+        "backend": "webgpu",
+        "dtype": "q8",
+        "reason": "",
+        "model": "Xenova/all-MiniLM-L6-v2",
+        "loadMs": 59.69999998807907
+      },
+      "collection": "bench_1793278396651_3",
+      "imports": [
+        {
+          "embedMs": 323.80000001192093,
+          "writeMs": 53.25833300000522,
+          "refreshMs": 310.8047919999808,
+          "totalMs": 710.6000000238419,
+          "count": 16
+        },
+        {
+          "embedMs": 377.5,
+          "writeMs": 196.5339999999851,
+          "refreshMs": 418.67016600002535,
+          "totalMs": 1001.8999999761581,
+          "count": 16
+        },
+        {
+          "embedMs": 372.09999999403954,
+          "writeMs": 15.688332999998238,
+          "refreshMs": 420.22474999999395,
+          "totalMs": 818.1000000238419,
+          "count": 16
+        }
+      ],
+      "measurements": [
+        {
+          "rep": 0,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "batch",
+            "water"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 55.5,
+          "searchMs": 13.263541000022087,
+          "endToEndMs": 75.39999997615814
+        },
+        {
+          "rep": 0,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "backup",
+            "batch",
+            "quant"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 44.29999998211861,
+          "searchMs": 7.317708000016864,
+          "endToEndMs": 56.5
+        },
+        {
+          "rep": 0,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "backup",
+            "batch",
+            "collection"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 76.60000002384186,
+          "searchMs": 6.0130409999983385,
+          "endToEndMs": 86.2000000178814
+        },
+        {
+          "rep": 0,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 21.69999998807907,
+          "searchMs": 5.706334000045899,
+          "endToEndMs": 31
+        },
+        {
+          "rep": 0,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 24.5,
+          "searchMs": 4.954833000025246,
+          "endToEndMs": 33
+        },
+        {
+          "rep": 0,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "batch",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 24.5,
+          "searchMs": 6.059582999965642,
+          "endToEndMs": 34.099999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "backup",
+            "collection",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 24.599999994039536,
+          "searchMs": 4.2737920000217855,
+          "endToEndMs": 32.19999998807907
+        },
+        {
+          "rep": 0,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "vector",
+            "index",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 60.5,
+          "searchMs": 4.217874999972992,
+          "endToEndMs": 67.60000002384186
+        },
+        {
+          "rep": 0,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 23.299999982118607,
+          "searchMs": 5.140833000012208,
+          "endToEndMs": 31
+        },
+        {
+          "rep": 0,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "collection",
+            "train",
+            "bread"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 18,
+          "searchMs": 4.213833999994677,
+          "endToEndMs": 24.799999982118607
+        },
+        {
+          "rep": 0,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "backup",
+            "gpu",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 20.80000001192093,
+          "searchMs": 4.699250000005122,
+          "endToEndMs": 28.200000017881393
+        },
+        {
+          "rep": 0,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "backup",
+            "cache",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 16.299999982118607,
+          "searchMs": 4.762665999995079,
+          "endToEndMs": 23.69999998807907
+        },
+        {
+          "rep": 0,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "quant",
+            "cache",
+            "gpu"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 21.700000017881393,
+          "searchMs": 5.410207999986596,
+          "endToEndMs": 29.80000001192093
+        },
+        {
+          "rep": 0,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 16.69999998807907,
+          "searchMs": 5.994832999946084,
+          "endToEndMs": 25.099999994039536
+        },
+        {
+          "rep": 0,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "collection",
+            "backup",
+            "privacy"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 24.69999998807907,
+          "searchMs": 6.060583000013139,
+          "endToEndMs": 33.5
+        },
+        {
+          "rep": 0,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "train",
+            "quant",
+            "collection"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 26.69999998807907,
+          "searchMs": 5.861916999972891,
+          "endToEndMs": 35.5
+        },
+        {
+          "rep": 1,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "batch",
+            "water"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 19.69999998807907,
+          "searchMs": 5.0576250000158325,
+          "endToEndMs": 27.5
+        },
+        {
+          "rep": 1,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "backup",
+            "batch",
+            "quant"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 16.099999994039536,
+          "searchMs": 5.8329999999841675,
+          "endToEndMs": 24.799999982118607
+        },
+        {
+          "rep": 1,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "backup",
+            "batch",
+            "collection"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 20.30000001192093,
+          "searchMs": 5.44941599998856,
+          "endToEndMs": 28.200000017881393
+        },
+        {
+          "rep": 1,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 15.799999982118607,
+          "searchMs": 4.379707999993116,
+          "endToEndMs": 22.799999982118607
+        },
+        {
+          "rep": 1,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 21.899999976158142,
+          "searchMs": 4.830707999994047,
+          "endToEndMs": 29.200000017881393
+        },
+        {
+          "rep": 1,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "batch",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 18.599999994039536,
+          "searchMs": 4.225500000000466,
+          "endToEndMs": 25.299999982118607
+        },
+        {
+          "rep": 1,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "backup",
+            "collection",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 19.399999976158142,
+          "searchMs": 4.289749999996275,
+          "endToEndMs": 26.30000001192093
+        },
+        {
+          "rep": 1,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "vector",
+            "index",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 22.30000001192093,
+          "searchMs": 5.255209000024479,
+          "endToEndMs": 30.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 14.200000017881393,
+          "searchMs": 5.000584000023082,
+          "endToEndMs": 21.600000023841858
+        },
+        {
+          "rep": 1,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "collection",
+            "train",
+            "bread"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 23.799999982118607,
+          "searchMs": 4.161791999998968,
+          "endToEndMs": 30.5
+        },
+        {
+          "rep": 1,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "backup",
+            "gpu",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 19.399999976158142,
+          "searchMs": 5.700041999982204,
+          "endToEndMs": 27.599999994039536
+        },
+        {
+          "rep": 1,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "backup",
+            "cache",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 20.099999994039536,
+          "searchMs": 6.464000000036322,
+          "endToEndMs": 29.099999994039536
+        },
+        {
+          "rep": 1,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "quant",
+            "cache",
+            "gpu"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 20.200000017881393,
+          "searchMs": 3.87604200001806,
+          "endToEndMs": 27
+        },
+        {
+          "rep": 1,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 21.80000001192093,
+          "searchMs": 4.935916999995243,
+          "endToEndMs": 29.19999998807907
+        },
+        {
+          "rep": 1,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "collection",
+            "backup",
+            "privacy"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 16.69999998807907,
+          "searchMs": 5.520750000025146,
+          "endToEndMs": 24.80000001192093
+        },
+        {
+          "rep": 1,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "train",
+            "quant",
+            "collection"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 15.400000005960464,
+          "searchMs": 4.287125000031665,
+          "endToEndMs": 22.19999998807907
+        },
+        {
+          "rep": 2,
+          "text": "How can I recover a removed file?",
+          "relevant": "backup",
+          "sources": [
+            "backup",
+            "batch",
+            "water"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 20.5,
+          "searchMs": 5.352332999987993,
+          "endToEndMs": 28.400000005960464
+        },
+        {
+          "rep": 2,
+          "text": "How do I secure my login?",
+          "relevant": "password",
+          "sources": [
+            "backup",
+            "batch",
+            "quant"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 24.400000005960464,
+          "searchMs": 3.9533330000122078,
+          "endToEndMs": 31
+        },
+        {
+          "rep": 2,
+          "text": "Find documents with similar meaning",
+          "relevant": "vector",
+          "sources": [
+            "backup",
+            "batch",
+            "collection"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 20.400000005960464,
+          "searchMs": 4.852833000011742,
+          "endToEndMs": 27.700000017881393
+        },
+        {
+          "rep": 2,
+          "text": "Combine keywords with semantic similarity",
+          "relevant": "hybrid",
+          "sources": [
+            "hybrid",
+            "quality",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 18.30000001192093,
+          "searchMs": 4.590082999959122,
+          "endToEndMs": 25.69999998807907
+        },
+        {
+          "rep": 2,
+          "text": "What happens when graphics acceleration is unavailable?",
+          "relevant": "gpu",
+          "sources": [
+            "gpu",
+            "privacy",
+            "collection"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 20.30000001192093,
+          "searchMs": 4.363624999998137,
+          "endToEndMs": 26.900000005960464
+        },
+        {
+          "rep": 2,
+          "text": "How do eight bit weights reduce model size?",
+          "relevant": "quant",
+          "sources": [
+            "quant",
+            "batch",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 20.80000001192093,
+          "searchMs": 4.942749999987427,
+          "endToEndMs": 28.5
+        },
+        {
+          "rep": 2,
+          "text": "Speed up encoding many documents together",
+          "relevant": "batch",
+          "sources": [
+            "backup",
+            "collection",
+            "batch"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 18.19999998807907,
+          "searchMs": 5.29179099999601,
+          "endToEndMs": 26.19999998807907
+        },
+        {
+          "rep": 2,
+          "text": "Why are newly inserted texts not searchable yet?",
+          "relevant": "index",
+          "sources": [
+            "vector",
+            "index",
+            "chunk"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 21.099999994039536,
+          "searchMs": 4.869165999989491,
+          "endToEndMs": 28.30000001192093
+        },
+        {
+          "rep": 2,
+          "text": "Keep different knowledge bases isolated",
+          "relevant": "collection",
+          "sources": [
+            "collection",
+            "backup",
+            "cache"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 20.30000001192093,
+          "searchMs": 4.614166999992449,
+          "endToEndMs": 27.5
+        },
+        {
+          "rep": 2,
+          "text": "When should I water a houseplant?",
+          "relevant": "water",
+          "sources": [
+            "collection",
+            "train",
+            "bread"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 17,
+          "searchMs": 4.578249999962281,
+          "endToEndMs": 24.099999994039536
+        },
+        {
+          "rep": 2,
+          "text": "Where do passengers board the railway?",
+          "relevant": "train",
+          "sources": [
+            "backup",
+            "gpu",
+            "train"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 20,
+          "searchMs": 5.254291000019293,
+          "endToEndMs": 27.700000017881393
+        },
+        {
+          "rep": 2,
+          "text": "How to prepare dough for baking?",
+          "relevant": "bread",
+          "sources": [
+            "backup",
+            "cache",
+            "bread"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.5,
+          "queryEmbedMs": 19,
+          "searchMs": 4.704666999983601,
+          "endToEndMs": 26
+        },
+        {
+          "rep": 2,
+          "text": "Reuse downloaded weights across browser visits",
+          "relevant": "cache",
+          "sources": [
+            "quant",
+            "cache",
+            "gpu"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 0.6309297535714575,
+          "queryEmbedMs": 17.799999982118607,
+          "searchMs": 5.517875000019558,
+          "endToEndMs": 25.799999982118607
+        },
+        {
+          "rep": 2,
+          "text": "Can documents be processed without a cloud service?",
+          "relevant": "privacy",
+          "sources": [
+            "privacy",
+            "batch",
+            "backup"
+          ],
+          "recallAt3": 1,
+          "ndcgAt3": 1,
+          "queryEmbedMs": 20.30000001192093,
+          "searchMs": 6.009750000026543,
+          "endToEndMs": 28.599999994039536
+        },
+        {
+          "rep": 2,
+          "text": "Split a long file and preserve its source",
+          "relevant": "chunk",
+          "sources": [
+            "collection",
+            "backup",
+            "privacy"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 19.899999976158142,
+          "searchMs": 5.500207999954,
+          "endToEndMs": 28.100000023841858
+        },
+        {
+          "rep": 2,
+          "text": "How should retrieval accuracy be measured?",
+          "relevant": "quality",
+          "sources": [
+            "train",
+            "quant",
+            "collection"
+          ],
+          "recallAt3": 0,
+          "ndcgAt3": 0,
+          "queryEmbedMs": 18.799999982118607,
+          "searchMs": 5.87745900003938,
+          "endToEndMs": 27.19999998807907
+        }
+      ],
+      "median": {
+        "documentEmbedMs": 372.09999999403954,
+        "writeMs": 53.25833300000522,
+        "refreshMs": 418.67016600002535,
+        "searchMs": 5.0576250000158325,
+        "endToEndMs": 28.200000017881393
+      },
+      "recallAt3": 0.6875,
+      "ndcgAt3": 0.5476162191964322
+    }
+  ]
+}

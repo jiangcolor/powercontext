@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>本地知识库 · StepFun × seekdb</title
+  ><link rel="stylesheet" href="/style.css" />
+  <body>
+    <main>
+      <header>
+        <span>StepFun × seekdb · owo</span>
+        <h1>你的文档，在本机理解。</h1>
+        <p>浏览器计算向量，seekdb 保存资料并完成混合检索。</p>
+      </header>
+      <section>
+        <div class="row">
+          <label
+            >知识库 <input id="name" value="personal" maxlength="40" /></label
+          ><button id="switch">切换 / 新建</button
+          ><label
+            >推理后端
+            <select id="backend">
+              <option value="auto">自动 · 优先 WebGPU</option>
+              <option value="wasm">强制 WASM</option>
+            </select></label
+          ><button id="load">加载量化模型</button>
+        </div>
+        <p id="status" role="status">尚未加载模型</p>
+        <p id="collection">当前知识库：未连接</p>
+        <progress id="progress" max="100" value="0"></progress>
+      </section>
+      <section>
+        <h2>1. 导入资料</h2>
+        <p>
+          选择 UTF-8 的 .txt / .md
+          文件，或粘贴文本；相同内容重复导入不会增加副本。
+        </p>
+        <input id="files" type="file" multiple accept=".txt,.md" /><textarea
+          id="text"
+          placeholder="在此粘贴文档…"
+        ></textarea>
+        <div class="row">
+          <button id="import">本地向量化并写入</button
+          ><button id="sample">导入示例资料</button>
+        </div>
+        <p id="importStats"></p>
+      </section>
+      <section>
+        <h2>2. 混合检索</h2>
+        <div class="row">
+          <input
+            id="query"
+            placeholder="例如：How can I restore a deleted document?"
+          /><button id="search">检索</button>
+        </div>
+        <p id="queryStats"></p>
+        <div id="results"></div>
+      </section>
+      <section>
+        <h2>3. 可复现评测</h2>
+        <p>
+          相同语料与查询，对比 FP32、INT8 / FP16 及批量写入。会分别测试 WASM
+          与可用的 WebGPU，保存每次测量和质量指标。启动前下载固定版本模型。
+        </p>
+        <button id="benchmark">运行完整评测</button
+        ><a id="download" hidden>下载评测 JSON</a>
+        <pre id="report"></pre>
+      </section>
+      <footer>模型下载后在当前设备运行。无 API Key，无云端推理。</footer>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
