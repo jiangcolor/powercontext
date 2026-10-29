@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验记录本 - 智能实验记录与检索系统</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+      </svg>
+      实验记录本
+    </a>
+    <nav>
+      <a href="index.html" class="active">首页</a>
+      <a href="experiments.html">实验记录</a>
+      <a href="search.html">语义搜索</a>
+      <a href="projects.html">项目管理</a>
+      <a href="compare.html">实验对比</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>智能实验记录与检索系统</h1>
+      <p>基于 seekdb 向量检索 + PowerContext 项目记忆，让每一次实验都有迹可循，让科研进展一目了然。</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="experiments.html" class="btn btn-primary">开始记录</a>
+        <a href="search.html" class="btn btn-secondary">语义搜索</a>
+      </div>
+      <div class="tech-badges">
+        <span class="tech-badge"><span class="dot green"></span>seekdb 向量检索</span>
+        <span class="tech-badge"><span class="dot blue"></span>PowerContext 记忆</span>
+      </div>
+    </section>
+
+    <section class="stats-grid" id="stats">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-experiments">-</div>
+        <div class="stat-label">实验记录</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-projects">-</div>
+        <div class="stat-label">科研项目</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-search">-</div>
+        <div class="stat-label">seekdb 检索</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-memory">-</div>
+        <div class="stat-label">PowerContext 记忆</div>
+      </div>
+    </section>
+
+    <section class="features-grid">
+      <div class="feature-card">
+        <div class="icon blue">&#128221;</div>
+        <h3>记录实验</h3>
+        <p>记录每次实验的参数、指标、结果和分析笔记，结构化存储，永不丢失。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon cyan">&#128269;</div>
+        <h3>语义搜索</h3>
+        <p>用自然语言搜索实验历史。"哪些实验准确率超过90%？" seekdb 向量检索帮你秒级定位。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon green">&#128196;</div>
+        <h3>项目追踪</h3>
+        <p>PowerContext 记住每个项目的目标、状态和关键决策，跨会话持久化。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon orange">&#128202;</div>
+        <h3>实验对比</h3>
+        <p>选择多个实验，自动生成参数与结果对比表，快速找到最优配置。</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function loadStats() {
+      try {
+        const stats = await api('/stats');
+        document.getElementById('stat-experiments').textContent = stats.total_experiments;
+        document.getElementById('stat-projects').textContent = stats.total_projects;
+        document.getElementById('stat-search').textContent = 'seekdb';
+        document.getElementById('stat-memory').textContent = 'PowerContext';
+      } catch {
+        document.getElementById('stat-experiments').textContent = '0';
+        document.getElementById('stat-projects').textContent = '0';
+        document.getElementById('stat-search').textContent = 'seekdb';
+        document.getElementById('stat-memory').textContent = 'PowerContext';
+      }
+    }
+    loadStats();
+  </script>
+</body>
+</html>

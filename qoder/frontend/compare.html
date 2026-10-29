@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验对比 - 实验记录本</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+      </svg>
+      实验记录本
+    </a>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="experiments.html">实验记录</a>
+      <a href="search.html">语义搜索</a>
+      <a href="projects.html">项目管理</a>
+      <a href="compare.html" class="active">实验对比</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="section-header">
+      <h2>实验对比</h2>
+    </div>
+    <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+      在「语义搜索」页面勾选实验加入对比，或从下方列表中选择。
+    </p>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+      <button class="btn btn-primary" onclick="showCompare()">生成对比表</button>
+      <button class="btn btn-secondary" onclick="clearSelection()">清空选择</button>
+      <span id="selected-count" style="line-height: 2.5; font-size: 0.9rem; color: var(--text-light);">已选 0 个实验</span>
+    </div>
+
+    <div id="compare-result" style="margin-bottom: 2rem;"></div>
+
+    <div class="section-header">
+      <h2>选择实验</h2>
+      <button class="btn btn-secondary btn-sm" onclick="loadAll()">刷新</button>
+    </div>
+
+    <div id="experiment-list" class="experiment-list">
+      <div class="loading"><div class="spinner"></div>加载中...</div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    const listEl = document.getElementById('experiment-list');
+    const compareEl = document.getElementById('compare-result');
+    const countEl = document.getElementById('selected-count');
+    let allExperiments = [];
+    let selectedIds = new Set();
+
+    async function loadAll() {
+      try {
+        allExperiments = await api('/experiments');
+        renderList();
+      } catch {
+        listEl.innerHTML = '<div class="empty-state"><h3>暂无实验记录</h3><p>请先添加实验记录</p></div>';
+      }
+    }
+
+    function renderList() {
+      if (!allExperiments || allExperiments.length === 0) {
+        listEl.innerHTML = '<div class="empty-state"><h3>暂无实验记录</h3></div>';
+        return;
+      }
+      listEl.innerHTML = allExperiments.map(exp => {
+        const checked = selectedIds.has(exp.id) ? 'checked' : '';
+        return `
+          <div class="experiment-card" style="display: flex; align-items: flex-start; gap: 1rem;">
+            <input type="checkbox" class="compare-checkbox" value="${exp.id}" ${checked} onchange="toggleSelect('${exp.id}', this.checked)" style="margin-top: 0.25rem; width: 18px; height: 18px; accent-color: var(--primary);">
+            <div style="flex: 1;">
+              <div class="exp-header">
+                <span class="exp-title">${exp.title || '未命名实验'}</span>
+                <span class="exp-date">${formatDate(exp.date)}</span>
+              </div>
+              <span class="status-badge ${exp.status}">${statusLabel(exp.status)}</span>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);">
+                ${Object.entries(exp.parameters || {}).map(([k, v]) => `<span style="background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 6px;">${k}: ${v}</span>`).join('')}
+              </div>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.375rem; font-size: 0.85rem; color: var(--text-light);">
+                ${Object.entries(exp.metrics || {}).map(([k, v]) => `<span style="background: #ecfdf5; padding: 0.2rem 0.5rem; border-radius: 6px; color: var(--success);">${k}: ${v}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      updateCount();
+    }
+
+    function toggleSelect(id, checked) {
+      if (checked) selectedIds.add(id);
+      else selectedIds.delete(id);
+      updateCount();
+    }
+
+    function updateCount() {
+      countEl.textContent = `已选 ${selectedIds.size} 个实验`;
+    }
+
+    function clearSelection() {
+      selectedIds.clear();
+      renderList();
+      compareEl.innerHTML = '';
+    }
+
+    function showCompare() {
+      if (selectedIds.size < 2) {
+        showToast('请至少选择 2 个实验进行对比', 'error');
+        return;
+      }
+      const selected = allExperiments.filter(e => selectedIds.has(e.id));
+      const allParamKeys = new Set();
+      const allMetricKeys = new Set();
+      selected.forEach(e => {
+        Object.keys(e.parameters || {}).forEach(k => allParamKeys.add(k));
+        Object.keys(e.metrics || {}).forEach(k => allMetricKeys.add(k));
+      });
+
+      let html = '<table class="compare-table"><thead><tr><th>维度</th>';
+      selected.forEach(e => {
+        html += `<th>${e.title || '未命名'}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      html += '<tr><td><strong>项目</strong></td>';
+      selected.forEach(e => { html += `<td>${e.project_id || '-'}</td>`; });
+      html += '</tr>';
+
+      html += '<tr><td><strong>状态</strong></td>';
+      selected.forEach(e => { html += `<td><span class="status-badge ${e.status}">${statusLabel(e.status)}</span></td>`; });
+      html += '</tr>';
+
+      html += '<tr><td><strong>日期</strong></td>';
+      selected.forEach(e => { html += `<td>${formatDate(e.date)}</td>`; });
+      html += '</tr>';
+
+      for (const key of allParamKeys) {
+        html += `<tr><td><strong>参数: ${key}</strong></td>`;
+        selected.forEach(e => {
+          const val = e.parameters?.[key];
+          html += `<td>${val != null ? val : '-'}</td>`;
+        });
+        html += '</tr>';
+      }
+
+      for (const key of allMetricKeys) {
+        html += `<tr><td><strong>指标: ${key}</strong></td>`;
+        const values = selected.map(e => e.metrics?.[key]);
+        const numericValues = values.filter(v => typeof v === 'number');
+        const maxVal = numericValues.length > 0 ? Math.max(...numericValues) : null;
+        selected.forEach((e, i) => {
+          const val = e.metrics?.[key];
+          const isMax = val != null && val === maxVal && numericValues.length > 1;
+          html += `<td ${isMax ? 'style="color: var(--success); font-weight: 600;"' : ''}>${val != null ? val : '-'}${isMax ? ' ★' : ''}</td>`;
+        });
+        html += '</tr>';
+      }
+
+      html += '</tbody></table>';
+      compareEl.innerHTML = html;
+      compareEl.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>
