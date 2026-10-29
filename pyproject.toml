@@ -178,6 +178,8 @@ extra-paths = [
 
 [tool.ty.src]
 exclude = [
+    # Official challenge assets use their own pinned self-test environment.
+    "competition",
     # Optional Jupyter dependencies and notebook state are validated by notebooks-test.
     "examples/jupyter",
     "e2e/bub",

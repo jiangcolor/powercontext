@@ -1,0 +1,25 @@
+name: Task 11 native hybrid acceptance
+
+on:
+  push:
+    branches: [competition/task11-hybrid-search]
+
+permissions:
+  contents: read
+
+jobs:
+  hybrid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Build the official pinned Linux self-test environment
+        run: make -C competition docker-build
+      - name: Run official hybrid acceptance against embedded seekdb
+        working-directory: competition
+        run: >-
+          docker compose run --rm selftest python -m pytest -q
+          -c /selftest/pytest.ini --confcutdir=/selftest
+          /selftest/challenges/retrieval-02-hybrid-search/acceptance
