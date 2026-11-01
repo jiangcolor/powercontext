@@ -33,7 +33,7 @@ from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from jsonschema.protocols import Validator
 from referencing import Registry
 from referencing.exceptions import Unresolvable
-from sqlalchemy import select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from powercontext.artifacts import Artifact, ArtifactRef, MemoryCitation
@@ -158,7 +158,11 @@ from powercontext.builtin.persistence.supervision import (
     ArtifactProcessingBindingStateRepository,
     ArtifactProcessingLeaseRepository,
 )
-from powercontext.builtin.persistence.tables import ARTIFACT_HEADS_TABLE, SOURCE_JOURNAL_HEADS_TABLE
+from powercontext.builtin.persistence.tables import (
+    ARTIFACT_HEADS_TABLE,
+    SOURCE_JOURNAL_HEADS_TABLE,
+    SOURCE_LIFECYCLE_NODES_TABLE,
+)
 from powercontext.builtin.persistence.topic_memory import TopicMemoryRepository
 from powercontext.builtin.persistence.topic_memory_index import NoTopicMemoryIndex, TopicMemoryIndex
 from powercontext.builtin.persistence.topic_memory_management import TopicMemoryManagementWriter
@@ -506,6 +510,48 @@ class _ScopedServices:
             memory_service=memory_service,
             estimator=self.token_estimator,
         )
+
+
+def _source_lifecycle_active_node_ids(rows: Sequence[Mapping[str, Any]]) -> set[str]:
+    """Derive the active node set from persisted lifecycle rows.
+
+    Sources seed availability; every other node joins when its parents satisfy its
+    ``all``/``any`` policy. Iterates to a fixed point because availability propagates
+    across multiple dependency layers.
+    """
+
+    nodes = {row["node_id"]: row for row in rows}
+    active = {nid for nid, row in nodes.items() if row["kind"] == "source" and row["available"]}
+    changed = True
+    while changed:
+        changed = False
+        for nid, row in nodes.items():
+            if nid in active or row["kind"] == "source":
+                continue
+            parents = json.loads(row["parents_json"])
+            support = [parent in active for parent in parents]
+            if (row["policy"] == "all" and all(support)) or (row["policy"] == "any" and any(support)):
+                active.add(nid)
+                changed = True
+    return active
+
+
+async def _fetch_inactive_topic_ids(connection: AsyncConnection, scope: str) -> set[str]:
+    """Return artifact ids of Topic Memory nodes that currently lack supporting evidence."""
+
+    rows = (
+        await connection.execute(
+            select(SOURCE_LIFECYCLE_NODES_TABLE).where(SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope)
+        )
+    ).mappings().all()
+    active = _source_lifecycle_active_node_ids([dict(row) for row in rows])
+    inactive: set[str] = set()
+    for row in rows:
+        if row["kind"] != "topic" or row["node_id"] in active:
+            continue
+        ref = ArtifactRef.model_validate(json.loads(row["ref_json"]))
+        inactive.add(ref.artifact_id)
+    return inactive
 
 
 class RelationalContexts:
@@ -991,7 +1037,8 @@ class RelationalContexts:
             embedding_profile = query_embedding.embedding_profile
         scope = validate_scope_id(scope_id)
         async with self.database.transaction() as connection:
-            return await self.repositories.topic_memories.search(
+            inactive = await _fetch_inactive_topic_ids(connection, scope)
+            result = await self.repositories.topic_memories.search(
                 connection,
                 scope,
                 query,
@@ -1001,6 +1048,50 @@ class RelationalContexts:
                 embedding_profile=embedding_profile,
                 admission=admission,
             )
+        if inactive:
+            hits = tuple(hit for hit in result.hits if hit.artifact_ref.artifact_id not in inactive)
+        else:
+            hits = result.hits
+        return TopicMemorySearchResult(
+            mode=result.mode,
+            hits=hits,
+            admission=result.admission,
+        )
+
+    async def lifecycle_upsert_nodes(
+        self,
+        scope_id: str,
+        nodes: Sequence[Mapping[str, Any]],
+        /,
+    ) -> None:
+        """Replace the persisted source-lifecycle graph for one scope."""
+
+        scope = validate_scope_id(scope_id)
+        async with self.database.transaction() as connection:
+            await connection.execute(
+                delete(SOURCE_LIFECYCLE_NODES_TABLE).where(
+                    SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope
+                )
+            )
+            if nodes:
+                await connection.execute(
+                    insert(SOURCE_LIFECYCLE_NODES_TABLE),
+                    [{"scope_id": scope, **dict(node)} for node in nodes],
+                )
+
+    async def lifecycle_load_nodes(self, scope_id: str, /) -> tuple[Mapping[str, Any], ...]:
+        """Return the persisted source-lifecycle graph rows for one scope."""
+
+        scope = validate_scope_id(scope_id)
+        async with self.database.transaction() as connection:
+            rows = (
+                await connection.execute(
+                    select(SOURCE_LIFECYCLE_NODES_TABLE).where(
+                        SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope
+                    )
+                )
+            ).mappings().all()
+            return tuple(dict(row) for row in rows)
 
     async def search_skills(
         self,

@@ -17,8 +17,7 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Mapping
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -182,54 +181,53 @@ class SourceLifecycleService:
                 else:
                     await service.forget(memory, entries=(entry,), reason="lifecycle-withdraw")
 
-    def _path(self) -> Path | None:
-        url = getattr(getattr(self._runtime, "_config", None), "database", None)
-        raw = getattr(url, "url", "") or ""
-        if ":///" not in raw:
+    def _provider(self) -> Any:
+        provider = getattr(self._runtime, "_provider", None)
+        if provider is None or not hasattr(provider, "lifecycle_load_nodes"):
             return None
-        target = raw.split("///", 1)[1]
-        if not target or target == ":memory:":
-            return None
-        return Path(target + ".lifecycle.json")
+        return provider
 
     async def _ensure_loaded(self) -> None:
         if self._loaded:
             return
-        path = self._path()
-        if path is not None and path.exists():
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except ValueError:
-                payload = {}
-            for node_id, item in payload.get("nodes", {}).items():
-                kind = item["kind"]
-                ref = _decode_ref(kind, item["ref"])
-                node = _Node(kind, ref, tuple(item["parents"]), item["policy"], item.get("revision"))
-                node.sequence = item.get("sequence", 0)
-                node.available = item.get("available", True)
-                self._nodes[node_id] = node
+        provider = self._provider()
+        if provider is not None:
+            for row in await provider.lifecycle_load_nodes(self.scope_id):
+                node = self._row_to_node(row)
+                if node is not None:
+                    self._nodes[row["node_id"]] = node
         self._loaded = True
 
     async def _persist(self) -> None:
-        path = self._path()
-        if path is None:
+        provider = self._provider()
+        if provider is None:
             return
-        payload = {
-            "nodes": {
-                nid: {
-                    "kind": node.kind,
-                    "ref": node.ref.model_dump(mode="json"),
-                    "parents": list(node.parents),
-                    "policy": node.policy,
-                    "revision": node.revision,
-                    "sequence": node.sequence,
-                    "available": node.available,
-                }
-                for nid, node in self._nodes.items()
-            }
+        rows = [self._node_to_row(nid, node) for nid, node in self._nodes.items()]
+        await provider.lifecycle_upsert_nodes(self.scope_id, rows)
+
+    @staticmethod
+    def _node_to_row(node_id: str, node: _Node) -> dict[str, Any]:
+        return {
+            "node_id": node_id,
+            "kind": node.kind,
+            "ref_json": node.ref.model_dump_json(),
+            "parents_json": json.dumps(list(node.parents)),
+            "policy": node.policy,
+            "revision": node.revision,
+            "sequence": node.sequence,
+            "available": node.available,
         }
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    @staticmethod
+    def _row_to_node(row: Mapping[str, Any]) -> _Node | None:
+        kind = row["kind"]
+        ref = _decode_ref(kind, json.loads(row["ref_json"]))
+        if ref is None:
+            return None
+        node = _Node(kind, ref, tuple(json.loads(row["parents_json"])), row["policy"], row.get("revision"))
+        node.sequence = row.get("sequence", 0)
+        node.available = row.get("available", True)
+        return node
 
 
 def _decode_ref(kind: str, payload: dict[str, Any]) -> Any:

@@ -1180,6 +1180,28 @@ RECURRENCE_OBSERVATION_TABLE = Table(
 
 RECURRENCE_TABLES = (RECURRENCE_MATCH_TABLE, RECURRENCE_OBSERVATION_TABLE)
 
+# Source lifecycle DAG: one row per registered node (Source / Memory / Topic Memory).
+# The active set is derived from these rows by applying each node's all/any policy
+# over its parent edges, mirroring the runtime's in-memory propagation.
+SOURCE_LIFECYCLE_NODES_TABLE = Table(
+    "pc_source_lifecycle_nodes",
+    SHARED_METADATA,
+    Column("scope_id", identity_string(MAX_SCOPE_ID_LENGTH), primary_key=True),
+    Column("node_id", identity_string(MAX_ARTIFACT_ID_LENGTH), primary_key=True),
+    Column("kind", String(16), nullable=False),
+    Column("ref_json", _entry_text_type(), nullable=False),
+    Column("parents_json", _entry_text_type(), nullable=False),
+    Column("policy", String(16), nullable=False),
+    Column("revision", Integer, nullable=True),
+    Column("sequence", Integer, nullable=False),
+    Column("available", Boolean, nullable=False),
+    CheckConstraint("kind IN ('source', 'memory', 'topic')", name="ck_pc_lifecycle_node_kind"),
+    CheckConstraint("policy IN ('all', 'any')", name="ck_pc_lifecycle_node_policy"),
+    CheckConstraint("sequence >= 0", name="ck_pc_lifecycle_node_sequence_nonnegative"),
+)
+
+SOURCE_LIFECYCLE_TABLES = (SOURCE_LIFECYCLE_NODES_TABLE,)
+
 BUILTIN_TABLES = (
     SCOPE_TABLES
     + SHARED_TABLES
@@ -1187,5 +1209,6 @@ BUILTIN_TABLES = (
     + MEMORY_TABLES
     + STATISTICS_TABLES
     + RECURRENCE_TABLES
+    + SOURCE_LIFECYCLE_TABLES
     + (ARTIFACT_TAGS_TABLE, DREAM_RUNS_TABLE, RECEIPT_MIGRATION_REVIEW_TABLE)
 )
