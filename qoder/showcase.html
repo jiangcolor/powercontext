@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>论文脉络图 - 基于 PowerContext 的文献综述智能助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            font-size: 1.3em;
+            color: #94a3b8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .section {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .section h2 {
+            font-size: 2em;
+            margin-bottom: 25px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section h2 .icon {
+            font-size: 1.2em;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(96, 165, 250, 0.2);
+        }
+
+        .feature-card h3 {
+            color: #a78bfa;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .feature-card p {
+            color: #94a3b8;
+            line-height: 1.8;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .screenshot-item {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .screenshot-item:hover {
+            transform: scale(1.02);
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .screenshot-caption {
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .screenshot-caption h4 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+        }
+
+        .screenshot-caption p {
+            color: #94a3b8;
+            font-size: 0.95em;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .tech-item {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #60a5fa;
+        }
+
+        .tech-item h4 {
+            color: #a78bfa;
+            margin-bottom: 10px;
+        }
+
+        .tech-item p {
+            color: #94a3b8;
+            font-size: 0.95em;
+        }
+
+        .architecture-diagram {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .architecture-diagram pre {
+            color: #60a5fa;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            text-align: left;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 3em;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1em;
+        }
+
+        .uid-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #60a5fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .uid-box code {
+            color: #60a5fa;
+            font-size: 1.1em;
+            font-family: 'Courier New', monospace;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            margin-top: 60px;
+        }
+
+        footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .screenshot-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 论文脉络图</h1>
+            <p>基于 PowerContext 框架的文献综述智能助手</p>
+            <p style="margin-top: 15px; font-size: 1.1em;">自动提取论文信息 · 构建引用关系图 · 发现语义关联 · 辅助 Related Work 写作</p>
+            <div class="badge">Qoder × OceanBase 2026 竞赛作品</div>
+        </header>
+
+        <div class="section">
+            <h2><span class="icon">🎯</span> 项目简介</h2>
+            <p style="font-size: 1.1em; color: #94a3b8; line-height: 1.8;">
+                论文脉络图是一个个人文献管理工具，深度集成 <strong style="color: #60a5fa;">PowerContext</strong> 框架，
+                帮助研究人员自动提取论文信息、构建引用关系图、发现语义关联，辅助 Related Work 写作。
+                系统支持批量 PDF 上传、智能解析、自动去重、语义检索、主题聚类和可视化脉络图等功能。
+            </p>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="number">16</div>
+                    <div class="label">论文总数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">7</div>
+                    <div class="label">主题聚类</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">77</div>
+                    <div class="label">关系边数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">3</div>
+                    <div class="label">关系类型</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">✨</span> 核心功能</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <h3>📤 批量上传</h3>
+                    <p>支持一次选择多个 PDF，自动解析并提取标题、摘要、方法、结论、参考文献等结构化信息，自动去重避免重复入库。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 语义检索</h3>
+                    <p>基于 TF-IDF 或 OpenAI Embedding 的论文语义搜索，支持自然语言查询，返回最相关的论文及相似度评分。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🕸️ 脉络图可视化</h3>
+                    <p>交互式 ECharts 图谱，展示引用关系（红色）、语义相似（蓝色）、同一作者（橙色）三种关系类型，支持拖拽和缩放。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📊 自动聚类</h3>
+                    <p>基于论文向量相似度自动聚类，使用并查集算法，支持调整相似度阈值（0.3=粗聚类，0.7=细聚类）。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📝 写作助手</h3>
+                    <p>按主题聚类生成 Related Work 大纲，每篇论文一句话贡献总结，支持选择特定主题深入生成或全部主题概览。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>👤 研究画像</h3>
+                    <p>记录研究方向和关注关键词，新论文自动关联已有文献，标记与用户研究相关的论文。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">🏗️</span> 技术架构</h2>
+            <p style="color: #94a3b8; margin-bottom: 20px;">
+                本项目深度集成 PowerContext 框架，充分利用其 Artifact 系统、SQLite 持久化、FTS5 全文搜索和 sqlite-vec 向量索引能力。
+            </p>
+
+            <div class="architecture-diagram">
+                <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      用户界面 (Flask + HTML)                 │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                  SyncPaperStore (同步包装器)                  │
+│              桥接 Flask 同步路由与 PowerContext 异步 API       │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                   PaperStore (异步持久化层)                   │
+│         使用 PowerContext SQLite Profile 管理数据库连接        │
+└──────┬───────────────┬───────────────┬──────────────────────┘
+       │               │               │
+┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
+│  FTS5 全文   │ │  sqlite-vec │ │  SQLAlchemy │
+│  搜索索引    │ │  向量索引   │ │  数据模型   │
+└─────────────┘ └─────────────┘ └─────────────┘
+                </pre>
+            </div>
+
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <h4>Artifact 系统</h4>
+                    <p>论文建模为不可变 Artifact，支持版本追踪和血缘管理，符合学术文献引用规范。</p>
+                </div>
+                <div class="tech-item">
+                    <h4>SQLite Profile</h4>
+                    <p>使用 PowerContext 的 SQLite Profile，自动处理连接池、事务、WAL 日志。</p>
+                </div>
+                <div class="tech-item">
+                    <h4>FTS5 全文搜索</h4>
+                    <p>论文标题、摘要、方法的全文检索，支持中文分词和高效查询。</p>
+                </div>
+                <div class="tech-item">
+                    <h4>sqlite-vec 向量索引</h4>
+                    <p>本地向量索引，无需外部向量数据库，支持语义相似度检索。</p>
+                </div>
+                <div class="tech-item">
+                    <h4>混合检索</h4>
+                    <p>RRF 融合算法结合 BM25 和向量搜索，提升检索质量。</p>
+                </div>
+                <div class="tech-item">
+                    <h4>TF-IDF 向量化</h4>
+                    <p>共享词汇表的 TF-IDF 向量化，无需额外模型即可实现语义聚类。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">📸</span> 功能演示</h2>
+
+            <div class="screenshot-grid">
+                <div class="screenshot-item">
+                    <img src="截图/屏幕截图_1-11-2026_193514_127.0.0.1.jpeg" alt="总览页面">
+                    <div class="screenshot-caption">
+                        <h4>📊 总览页面</h4>
+                        <p>展示论文总数、主题聚类数量、已读论文统计，按主题分组显示所有论文及贡献摘要。</p>
+                    </div>
+                </div>
+
+                <div class="screenshot-item">
+                    <img src="截图/屏幕截图_1-11-2026_193530_127.0.0.1.jpeg" alt="文献库页面">
+                    <div class="screenshot-caption">
+                        <h4>📚 文献库</h4>
+                        <p>支持按聚类筛选、按相关性筛选、自动重新聚类。每篇论文显示完整信息：标题、作者、年份、贡献、方法等。</p>
+                    </div>
+                </div>
+
+                <div class="screenshot-item">
+                    <img src="截图/屏幕截图_1-11-2026_193551_127.0.0.1.jpeg" alt="语义检索页面">
+                    <div class="screenshot-caption">
+                        <h4>🔍 语义检索</h4>
+                        <p>输入自然语言查询（如"acoustic"），系统返回最相关的论文及相似度评分，支持调整返回数量。</p>
+                    </div>
+                </div>
+
+                <div class="screenshot-item">
+                    <img src="截图/屏幕截图_1-11-2026_193618_127.0.0.1.jpeg" alt="脉络图页面">
+                    <div class="screenshot-caption">
+                        <h4>🕸️ 脉络图</h4>
+                        <p>交互式 ECharts 图谱，展示引用关系（红色）、语义相似（蓝色）、同一作者（橙色），支持按聚类筛选。</p>
+                    </div>
+                </div>
+
+                <div class="screenshot-item">
+                    <img src="截图/屏幕截图_1-11-2026_195224_127.0.0.1.jpeg" alt="写作助手页面">
+                    <div class="screenshot-caption">
+                        <h4>📝 写作助手</h4>
+                        <p>选择主题后生成 Related Work 大纲，包含论文贡献速览，支持全部主题概览或特定主题深入生成。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">🚀</span> 快速部署</h2>
+            <div style="background: rgba(15, 23, 42, 0.6); border-radius: 10px; padding: 25px; margin-top: 20px;">
+                <h4 style="color: #60a5fa; margin-bottom: 15px;">环境要求</h4>
+                <ul style="color: #94a3b8; margin-left: 20px; line-height: 2;">
+                    <li>Python 3.11+（推荐 64 位）</li>
+                    <li>pip 包管理器</li>
+                    <li>可选：OpenAI API Key（用于 LLM 提取和向量嵌入）</li>
+                </ul>
+
+                <h4 style="color: #60a5fa; margin: 25px 0 15px;">安装步骤</h4>
+                <pre style="color: #a78bfa; font-family: 'Courier New', monospace; overflow-x: auto; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
+# 1. 克隆仓库
+git clone https://github.com/jiangcolor/powercontext.git
+cd powercontext/qoder
+
+# 2. 创建虚拟环境（推荐）
+python -m venv venv
+venv\Scripts\activate
+
+# 3. 安装 PowerContext
+pip install -e ..
+pip install "powercontext[builtin] @ file:///C:/Users/ouyan/Desktop/oceanbase/powercontext"
+
+# 4. 安装其他依赖
+pip install -r requirements.txt
+
+# 5. 配置 API Key（可选）
+copy .env.example .env
+# 编辑 .env 填入 OPENAI_API_KEY
+
+# 6. 启动应用
+python app.py
+                </pre>
+                <p style="color: #94a3b8; margin-top: 15px;">浏览器打开 <code style="color: #60a5fa;">http://localhost:5000</code> 即可使用。</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">💡</span> 设计亮点</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <h3>深度集成 PowerContext</h3>
+                    <p>充分利用 Artifact 系统、SQLite Profile、FTS5、sqlite-vec 等基础设施，避免重复造轮子。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>异步架构</h3>
+                    <p>使用 PowerContext 的异步 SQLite Profile，通过 SyncPaperStore 桥接 Flask 同步路由，兼顾性能与开发效率。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>混合检索</h3>
+                    <p>结合 BM25 全文搜索和向量语义搜索，使用 RRF 融合排序，提升检索准确性和召回率。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>渐进式披露</h3>
+                    <p>从总览到文献库，从脉络图到写作助手，信息层次清晰，支持用户按需深入探索。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">📋</span> 参赛者信息</h2>
+            <div class="uid-box">
+                <p style="color: #94a3b8; margin-bottom: 10px;">Qoder UID</p>
+                <code>01a177b6-8819-704d-9812-f3caf0e363c3</code>
+            </div>
+            <div class="uid-box" style="margin-top: 20px;">
+                <p style="color: #94a3b8; margin-bottom: 10px;">GitHub 仓库</p>
+                <a href="https://github.com/jiangcolor/powercontext" target="_blank" style="color: #60a5fa; font-size: 1.1em; text-decoration: none;">
+                    https://github.com/jiangcolor/powercontext
+                </a>
+            </div>
+        </div>
+
+        <footer>
+            <p>基于 <a href="https://github.com/oceanbase/powercontext" target="_blank">PowerContext</a> 框架构建</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/jiangcolor/powercontext" target="_blank">GitHub 仓库</a> · 
+                Apache License 2.0 · 
+                Qoder × OceanBase 2026 竞赛作品
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
