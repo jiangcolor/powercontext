@@ -74,3 +74,40 @@ class SourceProcessingPendingProvider:
                 if intent is None or intent.dirty_generation == intent.clean_generation:
                     await intents.mark_dirty(connection, scope, self._binding)
         return str(rows[-1][0]) if len(rows) == limit else None
+
+
+async def count_due_scopes(
+    connection: AsyncConnection, binding_name: str, threshold: int
+) -> frozenset[str]:
+    """Scopes whose new journal entries since the last committed cursor reach threshold.
+
+    The count reads only persisted journal identity: the gap between a scope's
+    latest journal head and the cursor last committed for ``binding_name``. A
+    duplicated capture or a receipt trust upgrade reuses an existing journal entry,
+    so neither inflates the count; a lineage-only journal entry still occupies a
+    slot and therefore participates in the trigger, exactly as the product spec
+    requires. The returned set is the source of truth for count-based admission,
+    independent of the boolean dirty flag used by the time-based path.
+    """
+
+    if threshold < 1:
+        return frozenset()
+    heads = SOURCE_JOURNAL_HEADS_TABLE
+    # A scope can only be count-due when its journal head already reaches the
+    # threshold; pending never exceeds the head because the cursor starts at 0
+    # and only advances, so this WHERE is a safe pre-filter.
+    statement = select(heads.c.scope_id, heads.c.position).where(heads.c.position >= threshold)
+    rows = (await connection.execute(statement)).mappings()
+    head_by_scope: dict[str, int] = {}
+    for row in rows:
+        head_by_scope[str(row["scope_id"])] = int(row["position"])
+    if not head_by_scope:
+        return frozenset()
+    cursors = await SourceCursorRepository().load_many(connection, tuple(head_by_scope), binding_name)
+    due: set[str] = set()
+    for scope_id, head in head_by_scope.items():
+        cursor = cursors.get(scope_id)
+        sequence: int = 0 if cursor is None else cursor.cursor.sequence
+        if head - sequence >= threshold:
+            due.add(scope_id)
+    return frozenset(due)

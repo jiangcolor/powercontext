@@ -67,6 +67,7 @@ from powercontext.builtin.runtime.processing_contracts import (
     ArtifactProcessingWorkerOutcome,
     WorkerEntrypoint,
 )
+from powercontext.builtin.runtime.processing_discovery import count_due_scopes
 from powercontext.builtin.runtime.protocols import RuntimeTracing
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,10 @@ _CONTROL_CONFLICT_RETRY_SECONDS = 0.1
 _DISCOVERY_PAGE_SIZE = 100
 _RETRY_STATE_LIMIT = 1000
 _CHANNEL_QUEUE_LIMIT = _DISCOVERY_PAGE_SIZE // 2
+# When a Family is gated only by a source-count threshold (no time schedule),
+# the supervisor must keep re-checking the journal so reaching the threshold
+# starts processing promptly instead of waiting for an unrelated wake.
+_COUNT_POLL_SECONDS = 1.0
 _DISCOVERY_PAGE_DELAY_SECONDS = 0.01
 _DISCOVERY_TIMEOUT_SECONDS = 2.0
 _SPAWN_SIGTERM_GRACE_SECONDS = 1.0
@@ -117,6 +122,10 @@ class ArtifactProcessingBinding:
     # Only automatic admission is filtered; already accepted requests retain
     # their own Worker authorization and domain completion semantics.
     automatic_scope_filter: Callable[[AsyncConnection, tuple[str, ...]], Awaitable[frozenset[str]]] | None = None
+    # Optional count-based trigger: when the number of new journal entries since
+    # the last committed cursor reaches this threshold, automatic processing is
+    # admitted without waiting for the time schedule. OR'd with the schedule.
+    count_threshold: int | None = None
 
     def __post_init__(self) -> None:
         if not self.binding_name or self.binding_name != self.binding_name.strip():
@@ -402,6 +411,7 @@ class _FamilyState:
     next_schedule_at: float | None = None
     next_discovery_at: float = 0.0
     automatic_next: bool = False
+    count_poll: bool = False
     overflow_not_before: float = 0.0
     degraded: bool = False
     completed: int = 0
@@ -442,7 +452,10 @@ class ArtifactProcessingSupervisor:
         ):
             raise ValueError("dedicated Supervisor must own exactly its named Family")  # noqa: TRY003
         self._database = database
-        self._families = {binding.binding_name: _FamilyState(binding) for binding in bindings}
+        self._families = {
+            binding.binding_name: _FamilyState(binding, count_poll=binding.count_threshold is not None)
+            for binding in bindings
+        }
         self._lease_mode = lease_mode
         self._supervisor_group = supervisor_group
         self._intents = intents or ArtifactProcessingIntentRepository()
@@ -715,21 +728,37 @@ class ArtifactProcessingSupervisor:
         async with self._database.transaction() as connection:
             await self._leases.require_fence(connection, self._require_current_fence())
             persisted = await self._binding_states.load(connection, binding.binding_name, for_update=True)
-            enabled = binding.automatic_processing_interval is not None or binding.cron is not None
-            if not enabled:
+            time_enabled = binding.automatic_processing_interval is not None or binding.cron is not None
+            count_threshold = binding.count_threshold
+            if not time_enabled and count_threshold is None:
                 if persisted is not None and persisted.scan_in_progress:
                     await self._binding_states.finish_scan(connection, binding.binding_name)
                 next_schedule_at = None
                 scan_after = 0
             else:
                 now = await database_utc_now(connection)
-                if persisted is None or not persisted.scan_in_progress:
+                loop = asyncio.get_running_loop()
+                time_due = None
+                if time_enabled:
                     checkpoint = None if persisted is None else persisted.last_schedule_checkpoint_at
-                    due, next_time = _schedule_deadline(binding, checkpoint, now)
-                    next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
-                    if due is not None:
-                        persisted = await self._binding_states.start_scan(connection, binding.binding_name, due)
-                        scan_after = 0
+                    time_due, next_time = _schedule_deadline(binding, checkpoint, now)
+                    next_schedule_at = loop.time() + max(0, (next_time - now).total_seconds())
+                else:
+                    # A count-only Family has no time checkpoint; leaving a stale
+                    # deadline here would make the Supervisor spin on a time that
+                    # already passed.
+                    next_schedule_at = None
+                # Count-based trigger: any scope whose new journal entries since the
+                # last committed cursor reach the threshold is "due" for processing.
+                count_due: frozenset[str] = frozenset()
+                if count_threshold is not None:
+                    count_due = await count_due_scopes(connection, binding.binding_name, count_threshold)
+                due = (time_due is not None) or bool(count_due)
+                if due and (persisted is None or not persisted.scan_in_progress):
+                    persisted = await self._binding_states.start_scan(
+                        connection, binding.binding_name, now if time_due is None else time_due
+                    )
+                    scan_after = 0
                 if persisted is not None and persisted.scan_in_progress:
                     scan_in_progress = True
                     if scan_generation != persisted.scan_generation:
@@ -752,6 +781,12 @@ class ArtifactProcessingSupervisor:
                         and row.last_auto_scan_generation != persisted.scan_generation
                     )
                     eligible = frozenset(candidates)
+                    # Count gating: when the time schedule is not itself due, only
+                    # admit scopes whose pending count reaches the threshold. A due
+                    # time schedule keeps the original OR semantics and admits every
+                    # dirty scope regardless of the count.
+                    if time_due is None and count_threshold is not None:
+                        eligible &= count_due
                     if candidates and binding.automatic_scope_filter is not None:
                         eligible &= await binding.automatic_scope_filter(connection, candidates)
                     for row in rows:
@@ -770,10 +805,18 @@ class ArtifactProcessingSupervisor:
                         scan_after = 0
                         # Starting a scan established its checkpoint, so a
                         # completed page must not restart the interval here.
-                        _, next_time = _schedule_deadline(binding, persisted.last_schedule_checkpoint_at, now)
-                        next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
+                        if time_enabled:
+                            _, next_time = _schedule_deadline(binding, persisted.last_schedule_checkpoint_at, now)
+                            next_schedule_at = loop.time() + max(0, (next_time - now).total_seconds())
+                        else:
+                            next_schedule_at = None
                     else:
-                        next_discovery_at = asyncio.get_running_loop().time() + _DISCOVERY_PAGE_DELAY_SECONDS
+                        next_discovery_at = loop.time() + _DISCOVERY_PAGE_DELAY_SECONDS
+                # Keep re-checking the journal while a count threshold exists so
+                # reaching it starts processing promptly instead of waiting for a
+                # distant time schedule to wake the supervisor.
+                if count_threshold is not None:
+                    next_discovery_at = loop.time() + _COUNT_POLL_SECONDS
         state.scan_after = scan_after
         state.scan_generation = scan_generation
         state.scan_in_progress = scan_in_progress
@@ -1093,7 +1136,13 @@ class ArtifactProcessingSupervisor:
                 continue
             if state.next_schedule_at is not None:
                 deadlines.append(state.next_schedule_at)
-            if state.discovery_pending or state.scan_in_progress or not state.reconcile_complete or state.degraded:
+            if (
+                state.discovery_pending
+                or state.scan_in_progress
+                or not state.reconcile_complete
+                or state.degraded
+                or state.count_poll
+            ):
                 deadlines.append(max(now, state.next_discovery_at))
         return None if not deadlines else max(0.001, min(deadlines) - now)
 
