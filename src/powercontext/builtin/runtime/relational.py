@@ -20,7 +20,7 @@ import asyncio
 import json
 import logging
 import secrets
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -101,6 +101,7 @@ from powercontext.builtin.artifacts.skill.distribution import RemoteSkillDistrib
 from powercontext.builtin.artifacts.skill.publication import ManagedSkillPublicationService
 from powercontext.builtin.artifacts.skill.registry import ExternalSkillRegistryService
 from powercontext.builtin.artifacts.topic_memory import (
+    MAX_TOPIC_MEMORY_SEARCH_LIMIT,
     TOPIC_MEMORY_SOURCE_WINDOW_BINDING,
     PublishedTopicMemory,
     TopicMemory,
@@ -520,30 +521,26 @@ def _source_lifecycle_active_node_ids(rows: Sequence[Mapping[str, Any]]) -> set[
     across multiple dependency layers.
     """
 
-    nodes = {row["node_id"]: row for row in rows}
-    active = {nid for nid, row in nodes.items() if row["kind"] == "source" and row["available"]}
-    changed = True
-    while changed:
-        changed = False
-        for nid, row in nodes.items():
-            if nid in active or row["kind"] == "source":
-                continue
-            parents = json.loads(row["parents_json"])
-            support = [parent in active for parent in parents]
-            if (row["policy"] == "all" and all(support)) or (row["policy"] == "any" and any(support)):
-                active.add(nid)
-                changed = True
-    return active
+    from powercontext.builtin.runtime.source_lifecycle import active_lifecycle_nodes
+
+    return active_lifecycle_nodes({
+        row["node_id"]: (row["kind"], tuple(json.loads(row["parents_json"])), row["policy"], row["available"])
+        for row in rows
+    })
 
 
 async def _fetch_inactive_topic_ids(connection: AsyncConnection, scope: str) -> set[str]:
     """Return artifact ids of Topic Memory nodes that currently lack supporting evidence."""
 
     rows = (
-        await connection.execute(
-            select(SOURCE_LIFECYCLE_NODES_TABLE).where(SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope)
+        (
+            await connection.execute(
+                select(SOURCE_LIFECYCLE_NODES_TABLE).where(SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope)
+            )
         )
-    ).mappings().all()
+        .mappings()
+        .all()
+    )
     active = _source_lifecycle_active_node_ids([dict(row) for row in rows])
     inactive: set[str] = set()
     for row in rows:
@@ -1042,14 +1039,18 @@ class RelationalContexts:
                 connection,
                 scope,
                 query,
-                limit=limit,
+                # Filtering must not let withdrawn topics crowd supported topics
+                # out of a small requested result window.
+                limit=min(MAX_TOPIC_MEMORY_SEARCH_LIMIT, limit + len(inactive))
+                if 1 <= limit <= MAX_TOPIC_MEMORY_SEARCH_LIMIT
+                else limit,
                 mode=mode,
                 query_vector=query_vector,
                 embedding_profile=embedding_profile,
                 admission=admission,
             )
         if inactive:
-            hits = tuple(hit for hit in result.hits if hit.artifact_ref.artifact_id not in inactive)
+            hits = tuple(hit for hit in result.hits if hit.artifact_ref.artifact_id not in inactive)[:limit]
         else:
             hits = result.hits
         return TopicMemorySearchResult(
@@ -1069,9 +1070,7 @@ class RelationalContexts:
         scope = validate_scope_id(scope_id)
         async with self.database.transaction() as connection:
             await connection.execute(
-                delete(SOURCE_LIFECYCLE_NODES_TABLE).where(
-                    SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope
-                )
+                delete(SOURCE_LIFECYCLE_NODES_TABLE).where(SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope)
             )
             if nodes:
                 await connection.execute(
@@ -1085,12 +1084,14 @@ class RelationalContexts:
         scope = validate_scope_id(scope_id)
         async with self.database.transaction() as connection:
             rows = (
-                await connection.execute(
-                    select(SOURCE_LIFECYCLE_NODES_TABLE).where(
-                        SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope
+                (
+                    await connection.execute(
+                        select(SOURCE_LIFECYCLE_NODES_TABLE).where(SOURCE_LIFECYCLE_NODES_TABLE.c.scope_id == scope)
                     )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
             return tuple(dict(row) for row in rows)
 
     async def search_skills(
