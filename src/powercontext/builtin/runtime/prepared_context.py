@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from itertools import chain
@@ -29,6 +28,7 @@ from powercontext.builtin.artifacts.memory.models import MemoryCitation, MemoryH
 from powercontext.builtin.artifacts.profile.models import Profile
 from powercontext.builtin.artifacts.topic_memory import TopicMemory, TopicMemorySearchHit
 from powercontext.builtin.runtime.errors import PreparedContextInvariantError
+from powercontext.builtin.runtime.evidence_selection import passage_options
 from powercontext.builtin.runtime.models import PrepareContextRequest, PreparedContext
 from powercontext.builtin.runtime.prepared_code import (
     CodeEvidenceRef,
@@ -178,36 +178,10 @@ class PreparedContextBuilder:
     ) -> PreparedContextBuild:
         """Select literal Memory slices that answer the query inside the byte budget."""
 
-        terms = tuple(dict.fromkeys(part for part in request.query.lower().split() if part))
-        ranked: list[tuple[int, PreparedFragment]] = []
-        seen: set[tuple[str, str, str, int, int]] = set()
-        for candidates in memory_candidates:
-            memory_ref = candidates.memory_ref
-            if memory_ref is None:
-                continue
-            for hit in candidates.hits:
-                span = _best_span(hit.text, terms)
-                if span is None:
-                    continue
-                start, end = span
-                identity = (candidates.scope_id, hit.entry_id, hit.entry_version_id, start, end)
-                if identity in seen:
-                    continue
-                seen.add(identity)
-                address = MemoryEntryAddress(
-                    memory=ArtifactAddress(scope_id=candidates.scope_id, artifact=memory_ref),
-                    entry_id=hit.entry_id,
-                    entry_version_id=hit.entry_version_id,
-                )
-                fragment = PreparedFragment(address=address, start=start, end=end, text=hit.text[start:end])
-                ranked.append((_span_score(fragment.text, terms), fragment))
-
-        ranked.sort(key=lambda item: -item[0])
-        selected: list[PreparedFragment] = []
-        for _, fragment in ranked:
-            if len(_render_fragments((*selected, fragment)).encode("utf-8")) > request.max_bytes:
-                continue
-            selected.append(fragment)
+        if sum(len(group.hits) for group in memory_candidates) > self.memory_candidate_limit:
+            raise PreparedContextInvariantError("memory-candidate-limit")
+        entries = _evidence_entries(memory_candidates)
+        selected = _pack_fragments(entries, query=request.query, max_bytes=request.max_bytes)
         if not selected:
             return PreparedContextBuild(context=self.empty(), origins=())
         content = _render_fragments(selected)
@@ -543,7 +517,7 @@ class PreparedContextBuilder:
                 entry_version_id=hit.entry_version_id,
             )
             origin: PreparedContextOrigin = citation
-            rendered_citation = citation.model_dump(mode="json")
+            rendered_citation: dict[str, object] = citation.model_dump(mode="json")
             if scope_id is not None:
                 memory = ArtifactAddress(scope_id=scope_id, artifact=hit.memory_ref)
                 origin = MemoryEntryAddress(
@@ -588,7 +562,7 @@ class PreparedContextBuilder:
             if hit.snippet is not None:
                 content["snippet"] = hit.snippet
             origin: PreparedContextOrigin = hit.artifact_ref
-            citation = {"artifact_ref": hit.artifact_ref.model_dump(mode="json")}
+            citation: dict[str, object] = {"artifact_ref": hit.artifact_ref.model_dump(mode="json")}
             body = json.dumps(content, ensure_ascii=False, separators=(",", ":"))
             if scope_id is not None:
                 origin = ArtifactAddress(scope_id=scope_id, artifact=hit.artifact_ref)
@@ -798,33 +772,62 @@ def _truncate_utf8(text: str, byte_budget: int) -> str:
     return f"{encoded_prefix.decode('utf-8', errors='ignore')}{_ELLIPSIS}"
 
 
-_SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+|\n+")
+def _evidence_entries(memory_candidates: Sequence[PreparedMemoryCandidates]) -> list[tuple[MemoryEntryAddress, str]]:
+    entries: list[tuple[MemoryEntryAddress, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for candidates in memory_candidates:
+        for hit in candidates.hits:
+            if candidates.memory_ref is None:
+                raise PreparedContextInvariantError("memory-ref-missing")
+            if hit.memory_ref != candidates.memory_ref:
+                raise PreparedContextInvariantError("memory-ref-mismatch")
+            address = MemoryEntryAddress(
+                memory=ArtifactAddress(scope_id=candidates.scope_id, artifact=hit.memory_ref),
+                entry_id=hit.entry_id,
+                entry_version_id=hit.entry_version_id,
+            )
+            # ArtifactAddress is a Pydantic value, so use the exact serialized
+            # identity rather than a text digest or a hash of its Python object.
+            identity = (address.memory.model_dump_json(), address.entry_id, address.entry_version_id)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            if hit.text.strip():
+                entries.append((address, hit.text))
+
+    return entries
 
 
-def _sentence_spans(text: str) -> list[tuple[int, int]]:
-    spans: list[tuple[int, int]] = []
-    start = 0
-    for match in _SENTENCE_BREAK.finditer(text):
-        end = match.start()
-        if end > start and text[start:end].strip():
-            spans.append((start, end))
-        start = match.end()
-    if start < len(text) and text[start:].strip():
-        spans.append((start, len(text)))
-    return spans
-
-
-def _span_score(text: str, terms: Sequence[str]) -> int:
-    lowered = text.lower()
-    return sum(1 for term in terms if term in lowered)
-
-
-def _best_span(text: str, terms: Sequence[str]) -> tuple[int, int] | None:
-    spans = _sentence_spans(text)
-    if not spans:
-        return None
-    best = max(spans, key=lambda span: _span_score(text[span[0] : span[1]], terms))
-    return best
+def _pack_fragments(
+    entries: Sequence[tuple[MemoryEntryAddress, str]], *, query: str, max_bytes: int
+) -> tuple[PreparedFragment, ...]:
+    options = passage_options([text for _, text in entries], query)
+    # Multiple-choice beam packing evaluates actual final rendering, including
+    # every citation, JSON escape, marker and trust-policy byte. One option per
+    # entry can contain adjacent or disjoint evidence intervals.
+    states: list[tuple[float, tuple[PreparedFragment, ...]]] = [(0.0, ())]
+    for (address, text), choices in zip(entries, options, strict=True):
+        expanded = list(states)
+        for value, fragments in states:
+            for choice in choices:
+                additions = tuple(
+                    PreparedFragment(address=address, start=start, end=end, text=text[start:end])
+                    for start, end in choice.spans
+                )
+                combined = (*fragments, *additions)
+                if len(_render_fragments(combined).encode("utf-8")) <= max_bytes:
+                    expanded.append((value + choice.score, combined))
+        # Keep the best score at each used-byte count, then retain a bounded
+        # set of alternatives so a short passage can leave room for later ones.
+        by_size: dict[int, tuple[float, tuple[PreparedFragment, ...]]] = {}
+        for value, fragments in expanded:
+            size = len(_render_fragments(fragments).encode("utf-8")) if fragments else 0
+            if size not in by_size or value > by_size[size][0]:
+                by_size[size] = (value, fragments)
+        states = sorted(by_size.values(), key=lambda item: -item[0])[:48]
+        if (0.0, ()) not in states:
+            states.append((0.0, ()))
+    return max(states, key=lambda item: item[0])[1]
 
 
 def _render_fragments(fragments: Sequence[PreparedFragment]) -> str:
