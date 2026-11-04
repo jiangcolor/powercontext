@@ -79,6 +79,10 @@ async def test_financial_paraphrase_search_survives_restart(tmp_path):
         "Consolidated statement of income. Net revenues 450. Operating income 130.",
         "Business overview: sparkling beverages and snack products are sold to customers.",
     )
+    texts += tuple(
+        f"Note {number}: EBITDA operating income depreciation amortization capital expenditures " * 4
+        for number in range(25)
+    )
     observations = []
     for number, text in enumerate(texts, 1):
         source = await registry.resolve(

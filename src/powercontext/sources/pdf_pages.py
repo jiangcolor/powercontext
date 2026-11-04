@@ -260,6 +260,29 @@ def _rank_pages(
         # incidental mentions scattered through a long exhibit.
         body = " ".join(_terms(text))
         score += sum(0.75 for left, right in pairwise(terms) if f"{left} {right}" in body)
+        # A question about a primary financial statement needs the statement
+        # itself even when explanatory notes repeat more of its vocabulary.
+        heading = " ".join(_terms(text.split("\n", 1)[-1][:450]))
+        query_terms = set(terms)
+        statement = bool(
+            re.search(
+                r"(?:consolidated )?statements? (?:of )?(?:income|operations|earnings|profit|cash flows)", heading
+            )
+        )
+        income_question = bool(
+            query_terms.intersection({"income", "earnings", "ebitda", "profit", "margin", "restructuring"})
+        )
+        cash_question = bool(
+            query_terms.intersection({"cash", "cashflow", "capex", "ebitda", "depreciation", "amortization"})
+        )
+        if (
+            statement
+            and income_question
+            and re.search(r"statements? (?:of )?(?:income|operations|earnings|profit)", heading)
+        ):
+            score += 12.0
+        if statement and cash_question and re.search(r"statements? (?:of )?cash flows", heading):
+            score += 12.0
         ranked.append((-score, order, citation))
 
     return ranked
