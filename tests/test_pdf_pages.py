@@ -54,10 +54,12 @@ async def test_long_unicode_document_names_preserve_revision_identity():
     assert len(set(sources)) == 3
 
 
-def test_missing_final_pdf_marker_is_not_accepted():
-    raw = blank_document().replace(b"%%EOF", b"")
+@pytest.mark.parametrize("suffix", [b"", b"6 0 obj\n<< /Type /Page >>"])
+def test_missing_final_pdf_marker_is_not_accepted(suffix):
+    original = blank_document()
+    raw = original + suffix if suffix else original.replace(b"%%EOF", b"")
     with pytest.raises(ValueError):
-        parse_pdf_document(PDFDocumentInput(document_id="broken", content=raw))
+        parse_pdf_document(value=PDFDocumentInput(document_id="broken", content=raw))
 
 
 @pytest.mark.asyncio
@@ -76,25 +78,37 @@ async def test_financial_paraphrase_search_survives_restart(tmp_path):
     texts = (
         "Pending litigation and proceedings: the company faces a lawsuit in federal court.",
         "Consolidated statement of cash flows. Depreciation and amortization 91. Capital expenditures 120.",
-        "Consolidated statement of income. Net revenues 450. Operating income 130.",
+        "Consolidated statement of income. Net revenues 450. Operating income 130. Profit after tax 120.",
         "Business overview: sparkling beverages and snack products are sold to customers.",
+        "Consolidated balance sheets. Short-term obligations 420. Long-term obligations 570.",
     )
     texts += tuple(
         f"Note {number}: EBITDA operating income depreciation amortization capital expenditures " * 4
         for number in range(25)
     )
+    documents = {"Northstar_2024_10-K": texts}
+    # Earlier filings repeat the target company's name and the comparative
+    # reporting year even when their own primary statements are irrelevant.
+    distractors = tuple(
+        f"Consolidated Statements of Income\nNorthstar net income 7 {number} 2024. Net income net income. "
+        "See current liabilities, total current liabilities and the comparative current liabilities."
+        for number in range(25)
+    )
+    documents["Northstar_2023_10-K"] = distractors
+    documents["Southbank_2024_10-K"] = distractors
     observations = []
-    for number, text in enumerate(texts, 1):
-        source = await registry.resolve(
-            PDFPageInput(
-                document_id="synthetic",
-                document_sha256="a" * 64,
-                page_number=number,
-                text=text,
+    for document_id, pages in documents.items():
+        for number, text in enumerate(pages, 1):
+            source = await registry.resolve(
+                PDFPageInput(
+                    document_id=document_id,
+                    document_sha256="a" * 64,
+                    page_number=number,
+                    text=text,
+                )
             )
-        )
-        observation = project_source_for_transport(registry, source)
-        observations.append(observation)
+            observation = project_source_for_transport(registry, source)
+            observations.append(observation)
     config = BuiltinConfig(database=SQLiteConfig(url=f"sqlite+aiosqlite:///{tmp_path / 'pdf.db'}"))
     async with open_builtin_runtime(config) as runtime:
         assert runtime.scopes is not None
@@ -124,9 +138,13 @@ async def test_financial_paraphrase_search_survives_restart(tmp_path):
         assert len(citations) == 1
         record = await memory.get(GetMemoryEntryRequest(citation=citations[0]))
         assert "litigation" in record.entry.text
-        citations = await search_pdf_pages(memory, "EBITDA less capex?", limit=3)
+        citations = await search_pdf_pages(memory, "Northstar FY2024 EBITDA less capex?", limit=3)
         retrieved = [(await memory.get(GetMemoryEntryRequest(citation=c))).entry.text for c in citations]
         assert any("Depreciation" in text for text in retrieved)
         assert any("Operating income" in text for text in retrieved)
         assert len({c.model_dump_json() for c in citations}) == len(citations)
         assert await search_pdf_pages(memory, "zzzzunknownword", limit=3) == ()
+
+        citations = await search_pdf_pages(memory, "What were Northstar's current liabilities in FY2024?", limit=20)
+        retrieved = [(await memory.get(GetMemoryEntryRequest(citation=c))).entry.text for c in citations]
+        assert any(text.startswith("Northstar_2024_10-K\nConsolidated balance sheets.") for text in retrieved)

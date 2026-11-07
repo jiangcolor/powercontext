@@ -21,10 +21,10 @@ import io
 import math
 import re
 from collections import Counter
-from collections.abc import Iterable
+from dataclasses import dataclass
 from itertools import pairwise
-from typing import Any
-from urllib.parse import quote
+from typing import TYPE_CHECKING
+from urllib.parse import quote, unquote
 
 from pydantic import BaseModel
 from pypdf import PdfReader
@@ -34,6 +34,9 @@ from powercontext.limits import MAX_SOURCE_ID_LENGTH
 from powercontext.sources.definitions import AdapterSourceDefinition
 from powercontext.sources.models import Source, SourceMaterialization
 from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY, TextEvidence
+
+if TYPE_CHECKING:
+    from powercontext.builtin.runtime.application import ScopedMemoryApplication
 
 PDF_PAGE_SOURCE_NAME = "pdf-page"
 PDF_PAGE_SOURCE_VERSION = "1"
@@ -76,7 +79,7 @@ def pdf_page_source_id(document_id: str, document_sha256: str, page_number: int)
     return source_id
 
 
-def parse_pdf_document(value: PDFDocumentInput, /) -> tuple[PDFPageInput, ...]:
+def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
     """Parse every physical page of one PDF revision, in order, without partial results."""
 
     if not isinstance(value.document_id, str) or not value.document_id.strip():
@@ -84,7 +87,7 @@ def parse_pdf_document(value: PDFDocumentInput, /) -> tuple[PDFPageInput, ...]:
     if not value.content:
         raise ValueError("pdf content must not be empty")  # noqa: TRY003
 
-    if b"%%EOF" not in value.content:
+    if not value.content.rstrip(b"\x00\t\n\x0c\r ").endswith(b"%%EOF"):
         raise ValueError("pdf is missing its end-of-file marker")  # noqa: TRY003
 
     digest = hashlib.sha256(value.content).hexdigest()
@@ -114,19 +117,42 @@ def parse_pdf_document(value: PDFDocumentInput, /) -> tuple[PDFPageInput, ...]:
     return tuple(pages)
 
 
-# Offline vocabulary connects common financial question wording to report terminology.
-# These are domain synonyms, independent of any document, question ID, or labelled page.
-_CONCEPTS = (
-    ("geography geographic geographies region regions countries country operates operations markets",),
-    ("legal litigation lawsuit lawsuits proceedings contingencies battles disputes",),
-    ("restructuring reorganization realignment severance impairment",),
-    ("ebitda operating income depreciation amortization",),
-    ("capex capital expenditures expenditure additions property equipment",),
-    ("income earnings profit loss operations",),
-    ("cash flows cashflow activities",),
-    ("revenue revenues sales turnover",),
-    ("debt borrowings borrowing obligations indebtedness",),
-    ("dividends dividend distributions",),
+# Query vocabulary is general accounting terminology, separate from report contents.
+_TOPICS = (
+    (
+        "geography geographic geographies region regions countries country segments markets",
+        r"business overview|(?:our |reportable |operating )?(?:segments|divisions)\b|geographic|item 1 business",
+    ),
+    (
+        "legal litigation lawsuit lawsuits proceedings contingencies battles disputes",
+        r"legal proceedings|litigation|commitments and contingencies",
+    ),
+    ("restructuring reorganization realignment severance", r"restructuring|reorganization|realignment"),
+    (
+        "income earnings profit loss revenue revenues sales turnover margin ebitda eps",
+        r"(?:consolidated )?(?:income statements?|statements? of (?:income|operations|earnings|profit and loss))",
+    ),
+    (
+        "cash flow flows cashflow capex depreciation amortization ebitda",
+        r"(?:consolidated )?(?:cash flows? statements?|statements? of cash flows?)",
+    ),
+    (
+        "assets liabilities equity inventory inventories receivables payables balance debt borrowings working capital",
+        r"(?:consolidated )?(?:balance sheets?|statements? of financial position)",
+    ),
+)
+_SYNONYMS = (
+    "revenue revenues sales turnover",
+    "debt borrowings borrowing obligations indebtedness",
+    "dividends dividend distributions",
+    "capex capital expenditures expenditure additions purchases property equipment",
+    "income earnings profit profits",
+    "inventory inventories",
+    "repurchases repurchase buybacks buyback",
+    "ebitda depreciation amortization",
+    "legal litigation lawsuit lawsuits proceedings contingencies battles disputes",
+    "geography geographic geographies region regions countries country segments markets",
+    "restructuring reorganization realignment severance",
 )
 _STOP_WORDS = frozenset([
     "a",
@@ -221,124 +247,174 @@ _STOP_WORDS = frozenset([
 ])
 
 
+_WORD = re.compile(r"[^\W_]+")
+_YEAR = re.compile(r"(?:19|20)\d{2}")
+_FILING_WORDS = frozenset([
+    "annual",
+    "report",
+    "form",
+    "10",
+    "k",
+    "q",
+    "10k",
+    "10q",
+    "8k",
+    "pdf",
+    "inc",
+    "ltd",
+    "limited",
+    "corporation",
+    "corp",
+    "company",
+    "co",
+])
+
+
 def _terms(text: str) -> tuple[str, ...]:
-    return tuple(re.findall(r"[^\W_]+", re.sub(r"\bfy(?=\d{4}\b)", "", text.casefold())))
+    return tuple(_WORD.findall(re.sub(r"\bfy\s*(?=\d{4}\b)", "", text.casefold())))
 
 
-def _financial_queries(question: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    terms = tuple(dict.fromkeys(term for term in _terms(question) if term not in _STOP_WORDS))
-    groups = tuple(group[0] for group in _CONCEPTS if set(group[0].split()).intersection(terms))
-    # Short queries avoid the Memory admission floor rejecting pages that support only
-    # one part of a multi-statement question. Every candidate still comes from Memory.
-    queries = tuple(dict.fromkeys((" ".join(terms), *groups, *terms[:32])))
-    return terms, tuple(query for query in queries if query)
+@dataclass(frozen=True, slots=True)
+class _SearchPage:
+    citation: MemoryCitation
+    document_id: str
+    text: str
+
+
+def _report_identity(document_id: str) -> tuple[tuple[str, ...], frozenset[str]]:
+    words = _terms(document_id)
+    return (
+        tuple(word for word in words if not word.isdigit() and word not in _FILING_WORDS),
+        frozenset(word for word in words if _YEAR.fullmatch(word)),
+    )
+
+
+def _report_signals(document_ids: set[str], query: tuple[str, ...]) -> tuple[dict[str, int], set[str]]:
+    # Derive filing hints solely from the documents actually present in scope.
+    # Opaque IDs simply leave all companies equally weighted.
+    words = set(query)
+    years = {word for word in query if _YEAR.fullmatch(word)}
+    identities = {doc: _report_identity(doc) for doc in document_ids}
+    compact_phrases = {left + right for left, right in pairwise(query)}
+    matched_names = {
+        doc: names
+        for doc, (names, _) in identities.items()
+        if names and (set(names) <= words or "".join(names) in words or "".join(names) in compact_phrases)
+    }
+    bonuses = {}
+    for doc, (_, filing_years) in identities.items():
+        matching_year = bool(years & filing_years)
+        if doc in matched_names:
+            bonuses[doc] = 12 + 10 * matching_year
+        elif not matched_names:
+            bonuses[doc] = 2 * matching_year
+    return bonuses, {word for names in matched_names.values() for word in (*names, "".join(names))}
+
+
+def _heading_bonus(text: str, patterns: tuple[str, ...]) -> int:
+    heading = " ".join(_terms(text)[:35])
+    heading = re.sub(r"^table of contents ", "", heading)
+    if heading.startswith(("table of contents", "index", "report of independent")):
+        return 0
+    lines = tuple(re.sub(r"^condensed ", "", " ".join(_terms(line))) for line in text.splitlines()[:5])
+    return 7 * sum(any(re.match(pattern, line) for line in (heading, *lines)) for pattern in patterns)
 
 
 def _rank_pages(
-    candidates: Iterable[tuple[MemoryCitation, str]], terms: tuple[str, ...]
-) -> list[tuple[float, int, MemoryCitation]]:
-    documents = [(citation, text, Counter(_terms(text))) for citation, text in candidates]
-    frequency = Counter(term for _, _, counts in documents for term in counts)
-    average_length = sum(sum(counts.values()) for _, _, counts in documents) / len(documents) or 1
+    pages: list[_SearchPage], question: str, search_order: dict[str, int]
+) -> list[tuple[float, int, int, MemoryCitation]]:
+    query = _terms(question)
+    document_scores, entity_words = _report_signals({page.document_id for page in pages}, query)
+    terms = tuple(
+        dict.fromkeys(
+            word
+            for word in query
+            if word not in _STOP_WORDS and word not in entity_words and not word.isdigit() and len(word) > 1
+        )
+    )
+    topic_terms = set(terms)
+    headings = tuple(pattern for words, pattern in _TOPICS if topic_terms.intersection(words.split()))
     expanded = dict.fromkeys(terms, 1.0)
-    for group in _CONCEPTS:
-        words = group[0].split()
-        if set(words).intersection(terms):
+    for group in _SYNONYMS:
+        words = group.split()
+        if topic_terms.intersection(words):
             for word in words:
-                expanded.setdefault(word, 0.35)
+                expanded.setdefault(word, 0.55)
+    if not expanded:
+        return []
+
+    tokenized = [(page, _terms(page.text)) for page in pages]
+    counts = [Counter(tokens) for _, tokens in tokenized]
+    frequency = Counter(term for count in counts for term in expanded.keys() & count.keys())
+    avg_length = sum(len(tokens) for _, tokens in tokenized) / len(pages) or 1
+    idfs = {term: math.log1p((len(pages) - frequency[term] + 0.5) / (frequency[term] + 0.5)) for term in expanded}
+    phrases = set(pairwise(query))
+    phrases = {(left, right) for left, right in phrases if left in topic_terms and right in topic_terms}
 
     ranked = []
-    for order, (citation, text, counts) in enumerate(documents):
-        length = sum(counts.values())
-        score = 0.0
-        for term, weight in expanded.items():
-            count = counts[term]
-            if count:
-                idf = math.log(1 + (len(documents) - frequency[term] + 0.5) / (frequency[term] + 0.5))
-                score += weight * idf * count * 2.2 / (count + 1.2 * (0.25 + 0.75 * length / average_length))
-        # Exact adjacent question terms help distinguish a financial statement from
-        # incidental mentions scattered through a long exhibit.
-        body = " ".join(_terms(text))
-        score += sum(0.75 for left, right in pairwise(terms) if f"{left} {right}" in body)
-        # A question about a primary financial statement needs the statement
-        # itself even when explanatory notes repeat more of its vocabulary.
-        heading = " ".join(_terms(text.split("\n", 1)[-1][:450]))
-        query_terms = set(terms)
-        statement = bool(
-            re.search(
-                r"(?:consolidated )?statements? (?:of )?(?:income|operations|earnings|profit|cash flows)", heading
-            )
+    for order, ((page, tokens), count) in enumerate(zip(tokenized, counts, strict=True)):
+        norm = 1.2 * (0.25 + 0.75 * len(tokens) / avg_length)
+        score = sum(
+            weight * idfs[term] * count[term] * 2.2 / (count[term] + norm)
+            for term, weight in expanded.items()
+            if count[term]
         )
-        income_question = bool(
-            query_terms.intersection({"income", "earnings", "ebitda", "profit", "margin", "restructuring"})
-        )
-        cash_question = bool(
-            query_terms.intersection({"cash", "cashflow", "capex", "ebitda", "depreciation", "amortization"})
-        )
-        if (
-            statement
-            and income_question
-            and re.search(r"statements? (?:of )?(?:income|operations|earnings|profit)", heading)
-        ):
-            score += 12.0
-        if statement and cash_question and re.search(r"statements? (?:of )?cash flows", heading):
-            score += 12.0
-        ranked.append((-score, order, citation))
-
+        score += _heading_bonus(page.text, headings)
+        if score <= 0:
+            continue
+        score += 1.4 * len(phrases.intersection(pairwise(tokens)))
+        score += document_scores.get(page.document_id, 0)
+        rank = search_order.get(page.citation.entry_version_id, len(search_order))
+        ranked.append((-score, rank, order, page.citation))
     return ranked
 
 
 async def search_pdf_pages(
-    memory: Any, question: str, limit: int = DEFAULT_PDF_SEARCH_LIMIT
+    memory: ScopedMemoryApplication, question: str, limit: int = DEFAULT_PDF_SEARCH_LIMIT
 ) -> tuple[MemoryCitation, ...]:
-    """Search persisted pages, rerank lexical evidence, and return exact page citations.
+    """Search the current scoped Memory and rank persisted evidence pages offline.
 
-    Candidate retrieval uses only the supplied scoped Memory's public search API.
-    BM25 and financial terminology expansion are deterministic and entirely offline.
-    Work is bounded by 43 searches of at most 160 candidates each; no corpus or
-    query state is cached across scopes or runtime restarts.
+    Memory's FTS result order breaks lexical ranking ties. Read the full active
+    scope through the public Memory API for reranking so a capped FTS result
+    cannot drop a relevant report or a page matching only part of the question.
     """
 
-    from powercontext.builtin.runtime import GetMemoryEntryRequest, SearchMemoryRequest
+    from powercontext.builtin.runtime import SearchMemoryRequest
 
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question must be a non-blank string")  # noqa: TRY003
     if type(limit) is not int or limit < 1:
         raise ValueError("limit must be a positive integer")  # noqa: TRY003
 
-    terms, queries = _financial_queries(question)
-    if not queries:
-        return ()
-    candidates = {}
-    for query in queries:
-        result = await memory.search(SearchMemoryRequest(query=query, mode="fts", limit=160))
-        for hit in result.hits:
-            citation = MemoryCitation(
-                memory_ref=hit.memory_ref, entry_id=hit.entry_id, entry_version_id=hit.entry_version_id
-            )
-            key = citation.model_dump_json()
-            candidates.setdefault(key, (citation, hit.text))
-    if not candidates:
-        return ()
-
-    ranked = _rank_pages(candidates.values(), terms)
-
-    citations = []
+    entries = await memory.list()
+    pages = []
     seen = set()
-    for _, _, citation in sorted(ranked, key=lambda item: item[:2]):
-        record = await memory.get(GetMemoryEntryRequest(citation=citation))
-        # Page identity is the persisted Source reference, rather than the Memory
-        # entry ID: two entries can refer to the same captured physical page.
-        page_sources = tuple(
-            sorted(source.source_id for source in record.entry.sources if source.source_id.startswith("pdf-page:"))
-        )
-        if not page_sources or page_sources in seen:
+    for record in entries.entries:
+        sources = record.entry.sources
+        if len(sources) != 1:
             continue
-        seen.add(page_sources)
-        citations.append(citation)
-        if len(citations) == limit:
-            break
-    return tuple(citations)
+        source_id = sources[0].source_id
+        if not source_id.startswith("pdf-page:") or source_id in seen:
+            continue
+        parts = source_id.removeprefix("pdf-page:").rsplit(":", 2)
+        if len(parts) != 3:
+            continue
+        key, _, _ = parts
+        document_id = record.entry.text.partition("\n")[0] if key.startswith("sha256:") else unquote(key)
+        body = record.entry.text.removeprefix(document_id.strip() + "\n")
+        if body == record.entry.text:
+            _, _, body = record.entry.text.partition("\n")
+        if not body.strip():
+            continue
+        seen.add(source_id)
+        pages.append(_SearchPage(record.citation, document_id, body))
+    if not pages:
+        return ()
+
+    result = await memory.search(SearchMemoryRequest(query=question, mode="fts", limit=min(limit, 100)))
+    search_order = {hit.entry_version_id: rank for rank, hit in enumerate(result.hits)}
+    ranked = _rank_pages(pages, question, search_order)
+    return tuple(citation for _, _, _, citation in sorted(ranked, key=lambda item: item[:3])[:limit])
 
 
 class _PDFPageAdapter:
