@@ -62,6 +62,34 @@ def test_missing_final_pdf_marker_is_not_accepted(suffix):
         parse_pdf_document(value=PDFDocumentInput(document_id="broken", content=raw))
 
 
+def test_parse_repairs_fragmented_numeric_table_label():
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=600, height=400)
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({
+            NameObject("/F1"): DictionaryObject({
+                NameObject("/Type"): NameObject("/Font"),
+                NameObject("/Subtype"): NameObject("/Type1"),
+                NameObject("/BaseFont"): NameObject("/Helvetica"),
+            }),
+        }),
+    })
+    stream = DecodedStreamObject()
+    stream.set_data(
+        b"BT /F1 12 Tf 20 360 Td (Current liabilities:) Tj "
+        b"0 -20 Td (Total  l i abi l i t i es  176,392    145,129) Tj "
+        b"0 -20 Td (Narrative l i abi l i t i es remains verbatim.) Tj ET"
+    )
+    page[NameObject("/Contents")] = stream
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    result = parse_pdf_document(PDFDocumentInput(document_id="balance", content=buffer.getvalue()))
+    assert "Total  liabilities  176,392    145,129" in result[0].text
+    assert "Narrative l i abi l i t i es remains verbatim." in result[0].text
+
+
 @pytest.mark.asyncio
 async def test_financial_paraphrase_search_survives_restart(tmp_path):
     from powercontext.builtin.artifacts.memory import MemoryEntryInput

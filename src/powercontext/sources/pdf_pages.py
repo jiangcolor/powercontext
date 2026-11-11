@@ -98,7 +98,7 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
         total = len(reader.pages)
         pages: list[PDFPageInput] = []
         for index in range(total):
-            text = reader.pages[index].extract_text() or ""
+            text = _repair_table_labels(reader.pages[index].extract_text() or "")
             pages.append(
                 PDFPageInput(
                     document_id=value.document_id,
@@ -115,6 +115,39 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
     if not pages:
         raise ValueError("pdf document must contain at least one page")  # noqa: TRY003
     return tuple(pages)
+
+
+_LABEL_WORD = re.compile(r"[^\W\d_]+")
+_NUMERIC_ROW_LABEL = re.compile(r"^([^\d\n]+?)(?=\s+\$?\s*\(?\d[\d,.]*\)?\s{2,}\$?\s*\(?\d)", re.M)
+_FRAGMENT_RUN = re.compile(r"[^\W\d_]+(?: [^\W\d_]+){1,8}")
+
+
+def _repair_table_labels(text: str) -> str:
+    """Join split glyph runs only in table labels with an intact spelling on the page.
+
+    Keep original characters, case, and numeric columns. The same-page spelling
+    supplies evidence for the join; prose is outside the numeric row pattern.
+    """
+    words = {w.casefold() for w in _LABEL_WORD.findall(text) if len(w) >= 4}
+
+    def restore(match: re.Match[str]) -> str:
+        parts = match[0].split(" ")
+        corrected = []
+        i = 0
+        while i < len(parts):
+            for j in range(len(parts), i + 1, -1):
+                fragment = parts[i:j]
+                joined = "".join(fragment)
+                if joined.casefold() in words and (len(fragment) >= 3 or any(len(p) <= 3 for p in fragment)):
+                    corrected.append(joined)
+                    i = j
+                    break
+            else:
+                corrected.append(parts[i])
+                i += 1
+        return " ".join(corrected)
+
+    return _NUMERIC_ROW_LABEL.sub(lambda m: _FRAGMENT_RUN.sub(restore, m[0]), text)
 
 
 # Query vocabulary is general accounting terminology, separate from report contents.
