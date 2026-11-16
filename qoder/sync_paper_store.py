@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
+from threading import Thread
 from pathlib import Path
 from typing import Any
 
@@ -30,22 +32,24 @@ class SyncPaperStore:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
         self._store: PaperStore | None = None
-        self._loop: asyncio.AbstractEventLoop | None = None
-
-    def _get_loop(self) -> asyncio.AbstractEventLoop:
-        """Get or create event loop."""
-        if self._loop is None or self._loop.is_closed():
-            try:
-                self._loop = asyncio.get_event_loop()
-            except RuntimeError:
-                self._loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._loop)
-        return self._loop
+        self._loop = asyncio.new_event_loop()
+        self._worker = Thread(target=self._loop.run_forever, daemon=True)
+        self._worker.start()
+        atexit.register(self.close)
 
     def _run_async(self, coro):
-        """Run async coroutine synchronously."""
-        loop = self._get_loop()
-        return loop.run_until_complete(coro)
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+
+    def close(self):
+        if self._loop.is_closed():
+            return
+        try:
+            if self._store is not None:
+                self._run_async(self._store_cm.__aexit__(None, None, None))
+        finally:
+            self._loop.call_soon_threadsafe(self._loop.stop)
+            self._worker.join()
+            self._loop.close()
 
     async def _get_store(self) -> PaperStore:
         """Get or create paper store."""

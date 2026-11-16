@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import json
 import shutil
-import tempfile
+import re
+import secrets
 import uuid
 from pathlib import Path
 
-from flask import Flask, render_template_string, request, redirect, url_for, flash, jsonify
+from flask import abort, Flask, render_template_string, request, redirect, url_for, flash, jsonify
 from markupsafe import Markup
 
 import config
 from paper_artifacts import Paper, PaperContent, PaperQuery
-from sync_paper_store import SyncPaperStore
 from pdf_parser import extract_pdf
 from vector_store import add_paper, auto_cluster, delete_paper as vec_delete, query_similar
 from llm_utils import (
@@ -24,6 +24,7 @@ from llm_utils import (
 from graph_builder import (
     build_citation_relations,
     build_full_graph,
+    paper_store,
     build_cluster_graph,
     discover_semantic_links,
     get_cluster_summary,
@@ -38,11 +39,26 @@ def make_paper(**kwargs) -> Paper:
     return Paper(artifact_id=paper_id, revision=1, content=content)
 
 
-paper_store = SyncPaperStore(Path(config.DATA_DIR) / "papers_powercontext.db")
+from database import init_db as init_graph_db
+
+init_graph_db()
 paper_store.init_db()
 
 app = Flask(__name__)
-app.secret_key = "paper-graph-secret-key"
+app.secret_key = secrets.token_hex(32)
+STAGING_DIR = config.UPLOAD_DIR / ".staging"
+STAGING_DIR.mkdir(exist_ok=True)
+
+
+def staged_pdf(token: str) -> Path | None:
+    if not token:
+        return None
+    if not re.fullmatch(r"[0-9a-f]{32}", token):
+        abort(400, description="无效的 PDF 上传凭证")
+    path = STAGING_DIR / f"{token}.pdf"
+    if not path.is_file():
+        abort(400, description="请重新上传 PDF")
+    return path
 
 BASE_TEMPLATE = """
 <!DOCTYPE html>
@@ -336,7 +352,7 @@ GRAPH_CONTENT = """
 <div id="graph-container"></div>
 <script>
 var chart = echarts.init(document.getElementById('graph-container'));
-var data = {{ graph_data | safe }};
+var data = {{ graph_data | tojson }};
 var option = {
     backgroundColor: '#1a1a2e',
     tooltip: {
@@ -496,11 +512,15 @@ def upload_batch():
         if not f.filename or not f.filename.endswith(".pdf"):
             continue
 
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        f.save(tmp.name)
-        tmp.close()
-
-        pdf_content = extract_pdf(tmp.name)
+        token = uuid.uuid4().hex
+        staged = STAGING_DIR / f"{token}.pdf"
+        f.save(staged)
+        try:
+            pdf_content = extract_pdf(str(staged))
+        except (RuntimeError, ValueError):
+            staged.unlink(missing_ok=True)
+            flash("无法读取 PDF，请检查文件后重试", "error")
+            continue
 
         if config.OPENAI_API_KEY and not config.OPENAI_API_KEY.startswith("sk-your"):
             extracted = extract_paper_structure(pdf_content.full_text, pdf_content.title_guess, pdf_content.abstract)
@@ -526,11 +546,11 @@ def upload_batch():
             contributions=extracted.get("contributions", ""),
             conclusions=extracted.get("conclusions", ""),
             topic_cluster=extracted.get("topic_cluster", ""),
-            pdf_path=tmp.name,
+            pdf_path=token,
             references=[],
         )
         paper = Paper(
-            artifact_id="",
+            artifact_id=token,
             revision=1,
             content=paper_content,
         )
@@ -595,13 +615,13 @@ def upload_save_batch():
         )
         paper = Paper(artifact_id=str(uuid.uuid4()), revision=1, content=paper_content)
 
-        pdf_src = request.form.get(f"pdf_path_{idx}", "")
-        if pdf_src and Path(pdf_src).exists():
+        pdf_src = staged_pdf(request.form.get(f"pdf_path_{idx}", ""))
+        if pdf_src is not None:
             pdf_dest = config.UPLOAD_DIR / f"{paper.artifact_id}.pdf"
             shutil.copy2(pdf_src, str(pdf_dest))
             paper_content = PaperContent(**{**paper.content.model_dump(), "pdf_path": str(pdf_dest)})
             paper = Paper(artifact_id=paper.artifact_id, revision=1, content=paper_content)
-            Path(pdf_src).unlink(missing_ok=True)
+            pdf_src.unlink(missing_ok=True)
 
         if config.OPENAI_API_KEY and not config.OPENAI_API_KEY.startswith("sk-your"):
             contrib = generate_contribution_summary(paper.content.title, paper.content.abstract, paper.content.methods) or paper.content.contributions
@@ -654,13 +674,13 @@ def upload_save():
     )
     paper = Paper(artifact_id=str(uuid.uuid4()), revision=1, content=paper_content)
 
-    pdf_src = request.form.get("pdf_path", "")
-    if pdf_src and Path(pdf_src).exists():
+    pdf_src = staged_pdf(request.form.get("pdf_path", ""))
+    if pdf_src is not None:
         pdf_dest = config.UPLOAD_DIR / f"{paper.artifact_id}.pdf"
         shutil.copy2(pdf_src, str(pdf_dest))
         paper_content = PaperContent(**{**paper.content.model_dump(), "pdf_path": str(pdf_dest)})
         paper = Paper(artifact_id=paper.artifact_id, revision=1, content=paper_content)
-        Path(pdf_src).unlink(missing_ok=True)
+        pdf_src.unlink(missing_ok=True)
 
     if config.OPENAI_API_KEY and not config.OPENAI_API_KEY.startswith("sk-your"):
         contrib = generate_contribution_summary(paper.content.title, paper.content.abstract, paper.content.methods) or paper.content.contributions
@@ -810,7 +830,7 @@ def graph():
             "lineStyle": {"color": edge_colors.get(e.relation_type, "#666"), "width": max(1, min((e.weight or 1.0) * 3, 5))},
         })
 
-    graph_data = json.dumps({"nodes": graph_nodes, "links": graph_links, "categories": categories}, ensure_ascii=False)
+    graph_data = {"nodes": graph_nodes, "links": graph_links, "categories": categories}
 
     return _render(
         "脉络图", GRAPH_CONTENT, "graph",
@@ -935,4 +955,4 @@ def writing_generate():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(port=5000)

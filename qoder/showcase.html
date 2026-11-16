@@ -450,16 +450,16 @@
                 <h4 style="color: #60a5fa; margin: 25px 0 15px;">安装步骤</h4>
                 <pre style="color: #a78bfa; font-family: 'Courier New', monospace; overflow-x: auto; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
 # 1. 克隆仓库
-git clone https://github.com/jiangcolor/powercontext.git
+git clone --branch competition/qoder-paper-graph https://github.com/jiangcolor/powercontext.git
 cd powercontext/qoder
 
 # 2. 创建虚拟环境（推荐）
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\Activate.ps1 # Windows PowerShell
+# macOS / Linux: source venv/bin/activate
 
 # 3. 安装 PowerContext
-pip install -e ..
-pip install "powercontext[builtin] @ file:///C:/Users/ouyan/Desktop/oceanbase/powercontext"
+python -m pip install -e "..[builtin]"
 
 # 4. 安装其他依赖
 pip install -r requirements.txt

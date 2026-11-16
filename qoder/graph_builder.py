@@ -6,11 +6,10 @@ from typing import Any
 from sync_paper_store import SyncPaperStore
 from database import PaperRelation, get_all_relations, save_relation
 from vector_store import query_by_embedding
-from pathlib import Path
+from config import DATA_DIR
 
 # Initialize paper store
-_paper_store = SyncPaperStore(Path(__file__).parent / "data" / "papers_powercontext.db")
-_paper_store.init_db()
+paper_store = SyncPaperStore(DATA_DIR / "papers_powercontext.db")
 
 
 @dataclass
@@ -53,7 +52,7 @@ class GraphEdge:
 
 
 def build_full_graph() -> tuple[list[GraphNode], list[GraphEdge]]:
-    papers = _paper_store.list_papers()
+    papers = paper_store.list_papers()
     relations = get_all_relations()
 
     nodes = []
@@ -94,14 +93,14 @@ def build_subgraph(paper_ids: list[str]) -> tuple[list[GraphNode], list[GraphEdg
 
 
 def build_cluster_graph(cluster: str) -> tuple[list[GraphNode], list[GraphEdge]]:
-    papers = _paper_store.list_papers()
+    papers = paper_store.list_papers()
     cluster_ids = [p.artifact_id for p in papers if p.content.topic_cluster == cluster]
     return build_subgraph(cluster_ids)
 
 
 def discover_semantic_links(paper_id: str, top_k: int = 5) -> list[PaperRelation]:
     similar = query_by_embedding(paper_id, n_results=top_k)
-    paper = _paper_store.get_paper(paper_id)
+    paper = paper_store.get_paper(paper_id)
     if not paper:
         return []
 
@@ -130,7 +129,7 @@ def discover_semantic_links(paper_id: str, top_k: int = 5) -> list[PaperRelation
 
 
 def build_citation_relations(paper_id: str, ref_titles: list[str]) -> list[PaperRelation]:
-    papers = _paper_store.list_papers()
+    papers = paper_store.list_papers()
     title_to_id = {p.content.title.lower().strip(): p.artifact_id for p in papers}
 
     new_relations = []
@@ -156,11 +155,11 @@ def build_citation_relations(paper_id: str, ref_titles: list[str]) -> list[Paper
 
 
 def build_author_relations(paper_id: str) -> list[PaperRelation]:
-    paper = _paper_store.get_paper(paper_id)
+    paper = paper_store.get_paper(paper_id)
     if not paper or not paper.content.authors:
         return []
 
-    papers = _paper_store.list_papers()
+    papers = paper_store.list_papers()
     new_relations = []
 
     for other in papers:
@@ -181,7 +180,7 @@ def build_author_relations(paper_id: str) -> list[PaperRelation]:
 
 
 def get_paper_timeline() -> list[GraphNode]:
-    papers = _paper_store.list_papers()
+    papers = paper_store.list_papers()
     sorted_papers = sorted(papers, key=lambda p: p.content.year or 9999)
     return [
         GraphNode(
@@ -198,7 +197,7 @@ def get_paper_timeline() -> list[GraphNode]:
 
 
 def get_cluster_summary() -> dict[str, list[GraphNode]]:
-    papers = _paper_store.list_papers()
+    papers = paper_store.list_papers()
     clusters: dict[str, list[GraphNode]] = {}
     for p in papers:
         c = p.content.topic_cluster or "未分类"

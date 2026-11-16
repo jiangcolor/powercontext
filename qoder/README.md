@@ -19,7 +19,7 @@
 - **研究画像**：记录研究方向和阅读进度，新论文自动关联已有文献
 - **写作助手**：按主题聚类生成 Related Work 大纲，每篇论文一句话贡献总结
 
-## 🚀 快速部署（Windows）
+## 🚀 快速部署
 
 ### 1. 环境准备
 
@@ -36,14 +36,16 @@ pip --version
 ### 2. 进入项目目录
 
 ```powershell
-cd C:\Users\ouyan\Desktop\oceanbase\powercontext\qoder
+git clone --branch competition/qoder-paper-graph https://github.com/jiangcolor/powercontext.git
+cd powercontext/qoder
 ```
 
 ### 3. 创建虚拟环境（推荐）
 
 ```powershell
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\Activate.ps1 # Windows PowerShell
+# macOS / Linux: source venv/bin/activate
 ```
 
 ### 4. 安装依赖
@@ -51,8 +53,7 @@ venv\Scripts\activate
 首先安装 PowerContext：
 
 ```powershell
-pip install -e ..
-pip install "powercontext[builtin] @ file:///C:/Users/ouyan/Desktop/oceanbase/powercontext"
+python -m pip install -e "..[builtin]"
 ```
 
 然后安装其他依赖：
@@ -110,6 +111,10 @@ python app.py
 ```
 
 浏览器打开 `http://localhost:5000`。
+
+### 验证主要功能
+
+安装依赖后，在本目录运行 `python smoke.py`。脚本用临时数据目录和合成 PDF 验证上传预览、确认保存、文献检索、图谱、写作提纲、并发读取及重启后的数据持久化。整个过程无需 API Key。
 
 ## 📁 项目结构
 
@@ -268,7 +273,7 @@ Flask 路由默认是同步的，而 PowerContext 的 SQLite Profile 是异步�
 ### 端口被占用
 
 ```powershell
-python app.py --port 5001
+python -m flask --app app run --port 5001
 ```
 
 或修改 `app.py` 最后一行：`app.run(debug=True, port=5001)`

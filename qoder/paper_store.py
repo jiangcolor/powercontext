@@ -37,6 +37,8 @@ from sqlalchemy import (
     text,
 )
 
+from sqlalchemy.dialects.sqlite import insert
+
 from paper_artifacts import Paper, PaperContent, PaperQuery, PaperSearchResult
 from powercontext.builtin.persistence.sqlite.profile import SQLiteConfig, SQLiteProfile
 
@@ -112,29 +114,38 @@ class PaperStore:
         abstract_search = (content.abstract or "").lower()
 
         async with self.database.transaction() as conn:
-            await conn.execute(
-                PAPERS_TABLE.insert().values(
-                    paper_id=paper_id,
-                    revision=revision,
-                    title=content.title,
-                    title_search=title_search,
-                    authors=json.dumps(content.authors, ensure_ascii=False),
-                    year=content.year,
-                    venue=content.venue,
-                    abstract=content.abstract,
-                    abstract_search=abstract_search,
-                    methods=content.methods,
-                    contributions=content.contributions,
-                    conclusions=content.conclusions,
-                    references_json=json.dumps(content.references, ensure_ascii=False),
-                    topic_cluster=content.topic_cluster,
-                    pdf_path=content.pdf_path,
-                    tags_json=json.dumps(content.tags, ensure_ascii=False),
-                    is_relevant=1 if content.is_relevant else 0,
-                    created_at=content.created_at,
-                )
+            statement = insert(PAPERS_TABLE).values(
+                paper_id=paper_id,
+                revision=revision,
+                title=content.title,
+                title_search=title_search,
+                authors=json.dumps(content.authors, ensure_ascii=False),
+                year=content.year,
+                venue=content.venue,
+                abstract=content.abstract,
+                abstract_search=abstract_search,
+                methods=content.methods,
+                contributions=content.contributions,
+                conclusions=content.conclusions,
+                references_json=json.dumps(content.references, ensure_ascii=False),
+                topic_cluster=content.topic_cluster,
+                pdf_path=content.pdf_path,
+                tags_json=json.dumps(content.tags, ensure_ascii=False),
+                is_relevant=1 if content.is_relevant else 0,
+                created_at=content.created_at,
             )
-
+            updates = {
+                column.name: statement.excluded[column.name]
+                for column in PAPERS_TABLE.c if column.name != "paper_id"
+            }
+            result = await conn.execute(statement.on_conflict_do_update(
+                index_elements=[PAPERS_TABLE.c.paper_id],
+                set_=updates,
+                where=statement.excluded.revision > PAPERS_TABLE.c.revision,
+            ))
+            if result.rowcount == 0:
+                return
+            await conn.exec_driver_sql("DELETE FROM papers_fts WHERE paper_id = ?", (paper_id,))
             await conn.exec_driver_sql(
                 "INSERT INTO papers_fts(paper_id, title, abstract, methods, contributions) VALUES (?, ?, ?, ?, ?)",
                 (paper_id, content.title, content.abstract or "", content.methods or "", content.contributions or ""),
