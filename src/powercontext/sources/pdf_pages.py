@@ -20,6 +20,7 @@ import hashlib
 import io
 import math
 import re
+import zlib
 from collections import Counter
 from dataclasses import dataclass
 from itertools import pairwise
@@ -27,7 +28,8 @@ from typing import TYPE_CHECKING
 from urllib.parse import quote, unquote
 
 from pydantic import BaseModel
-from pypdf import PdfReader
+from pypdf import PdfReader, get_configuration
+from pypdf.generic import ArrayObject, ContentStream, DictionaryObject, EncodedStreamObject, NameObject, NullObject
 
 from powercontext.artifacts import MemoryCitation
 from powercontext.limits import MAX_SOURCE_ID_LENGTH
@@ -101,10 +103,10 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
             page = reader.pages[index]
             # Text extraction can return early for pages without font resources,
             # hiding broken references or malformed content as an empty page.
-            content = page.get_contents()
-            if content is not None:
-                _ = content.operations
-            text = _repair_table_labels(page.extract_text() or "")
+            _validate_page_content(
+                page.get("/Contents"), page.get("/Resources", DictionaryObject()).get_object(), reader, set()
+            )
+            text = _extract_page_text(page)
             pages.append(
                 PDFPageInput(
                     document_id=value.document_id,
@@ -120,7 +122,104 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
 
     if not pages:
         raise ValueError("pdf document must contain at least one page")  # noqa: TRY003
-    return tuple(pages)
+    return _restore_missing_glyphs(pages)
+
+
+_LIGATURES = str.maketrans(dict(zip("ﬀﬁﬂﬃﬄﬅﬆ", ("ff", "fi", "fl", "ffi", "ffl", "st", "st"), strict=True)))
+_BROKEN_LINE_WORD = re.compile(r"\b[A-Za-z]{1,3}\n[A-Za-z]{2,}\b|\b[A-Za-z]{2,}\n[A-Za-z]{1,3}\b")
+_MISSING_GLYPH_WORD = re.compile(r"[A-Za-z]+(?:\x00[A-Za-z]*)+")
+
+
+def _validate_content_encoding(value) -> None:
+    """Reject compressed content that pypdf's recovery decoder would truncate."""
+    if value is None:
+        return
+    stream = value.get_object()
+    if isinstance(stream, ArrayObject):
+        for item in stream:
+            _validate_content_encoding(item)
+        return
+    if not isinstance(stream, EncodedStreamObject):
+        return
+    filters = stream.get("/Filter", ArrayObject()).get_object()
+    filters = (filters,) if isinstance(filters, str) else filters
+    parameters = stream.get("/DecodeParms", DictionaryObject()).get_object()
+    # pypdf exposes decoded bytes through get_data(); its pinned StreamObject
+    # representation retains the encoded bytes in _data, needed to check EOF.
+    data = stream._data
+    for index, filter_name in enumerate(filters):
+        if filter_name in ("/FlateDecode", "/Fl"):
+            decoder = zlib.decompressobj()
+            decoder.decompress(data, get_configuration().zlib_maximum_output_length)
+            if not decoder.eof:
+                raise ValueError("pdf page contains an incomplete compressed stream")  # noqa: TRY003
+        step = EncodedStreamObject()
+        step._data = data
+        step[NameObject("/Filter")] = filter_name
+        if isinstance(parameters, ArrayObject):
+            step[NameObject("/DecodeParms")] = parameters[index]
+        elif parameters:
+            step[NameObject("/DecodeParms")] = parameters
+        data = step.get_data()
+
+
+def _validate_page_content(value, resources, reader: PdfReader, ancestors: set[int]) -> None:
+    if value is None or isinstance(value.get_object(), NullObject):
+        return
+    _validate_content_encoding(value)
+    content = ContentStream(value, reader)
+    for operands, operator in content.operations:
+        if operator != b"Do":
+            continue
+        form = resources["/XObject"][operands[0]]
+        if form.get("/Subtype") != "/Form":
+            continue
+        if id(form) in ancestors:
+            raise ValueError("pdf page contains a recursive form")  # noqa: TRY003
+        # The text extractor catches errors inside Form XObjects. Validate their
+        # streams first so a damaged form cannot silently lose part of a page.
+        _validate_page_content(form, form.get("/Resources", resources).get_object(), reader, ancestors | {id(form)})
+
+
+def _extract_page_text(page) -> str:
+    text = page.extract_text() or ""
+    if _BROKEN_LINE_WORD.search(text):
+        layout = page.extract_text(extraction_mode="layout", layout_mode_strip_rotated=False)
+        # A font/size change can invent a line break inside a word. Use geometry
+        # only when it retains every non-whitespace character from the page.
+        if Counter("".join(text.split())) == Counter("".join(layout.split())) and len(
+            re.findall(r"[a-z]+|\d+", layout.lower())
+        ) < len(re.findall(r"[a-z]+|\d+", text.lower())):
+            text = "\n".join(re.sub(r"[^\S\n]+", " ", line).strip() for line in layout.splitlines()).strip()
+    return _repair_table_labels(text.translate(_LIGATURES))
+
+
+def _restore_missing_glyphs(pages: list[PDFPageInput]) -> tuple[PDFPageInput, ...]:
+    # Some embedded fonts explicitly map a ligature to U+0000. Only restore a
+    # word if the PDF itself supplies exactly one intact matching spelling.
+    vocabulary: dict[int, set[str]] = {}
+    for page in pages:
+        for word in re.findall(r"(?<![A-Za-z\x00])[A-Za-z]{4,80}(?![A-Za-z\x00])", page.text):
+            vocabulary.setdefault(len(word), set()).add(word.lower())
+
+    def restore(match: re.Match[str]) -> str:
+        broken = match[0]
+        pattern = re.compile(broken.lower().replace("\x00", "[a-z]{1,3}"))
+        minimum = len(broken)
+        maximum = minimum + 2 * broken.count("\x00")
+        candidates = {
+            word for size in range(minimum, maximum + 1) for word in vocabulary.get(size, ()) if pattern.fullmatch(word)
+        }
+        if len(candidates) != 1:
+            return broken
+        word = candidates.pop()
+        if broken.isupper():
+            return word.upper()
+        if broken[0].isupper():
+            return word.capitalize()
+        return word
+
+    return tuple(page.model_copy(update={"text": _MISSING_GLYPH_WORD.sub(restore, page.text)}) for page in pages)
 
 
 _LABEL_WORD = re.compile(r"[^\W\d_]+")
@@ -159,8 +258,8 @@ def _repair_table_labels(text: str) -> str:
 # Query vocabulary is general accounting terminology, separate from report contents.
 _TOPICS = (
     (
-        "geography geographic geographies region regions countries country segments markets",
-        r"business overview|(?:our |reportable |operating )?(?:segments|divisions)\b|geographic|item 1 business",
+        "geography geographic geographies region regions countries country segment segments markets product products service services",
+        r"business overview|(?:our |reportable |operating )?(?:segments|divisions)\b|geographic|item 1 business|.*\bby business segment\b|performance by business|(?:summary of )?business segment",
     ),
     (
         "legal litigation lawsuit lawsuits proceedings contingencies battles disputes",
@@ -168,23 +267,27 @@ _TOPICS = (
     ),
     ("restructuring reorganization realignment severance", r"restructuring|reorganization|realignment"),
     (
-        "income earnings profit loss revenue revenues sales turnover margin ebitda eps",
+        "income earnings profit loss revenue revenues sales turnover margin ebitda eps intensive growth grow",
         r"(?:consolidated )?(?:income statements?|statements? of (?:income|operations|earnings|profit and loss))",
     ),
     (
-        "cash flow flows cashflow capex depreciation amortization ebitda",
+        "cash flow flows cashflow capex depreciation amortization ebitda intensive",
         r"(?:consolidated )?(?:cash flows? statements?|statements? of cash flows?)",
     ),
     (
-        "assets liabilities equity inventory inventories receivables payables balance debt borrowings working capital",
+        "assets liabilities liability equity inventory inventories receivables payables balance debt borrowings working capital liquidity quick ratio ppne ppe property equipment",
         r"(?:consolidated )?(?:balance sheets?|statements? of financial position)",
+    ),
+    (
+        "tax taxes taxation",
+        r"(?:note \d+ )?(?:income taxes|taxation)|(?:consolidated )?statements? of (?:income|operations|earnings)",
     ),
 )
 _SYNONYMS = (
     "revenue revenues sales turnover",
     "debt borrowings borrowing obligations indebtedness",
     "dividends dividend distributions",
-    "capex capital expenditures expenditure additions purchases property equipment",
+    "capex capital expenditures expenditure additions purchases property plant equipment ppne ppe",
     "income earnings profit profits",
     "inventory inventories",
     "repurchases repurchase buybacks buyback",
@@ -192,6 +295,12 @@ _SYNONYMS = (
     "legal litigation lawsuit lawsuits proceedings contingencies battles disputes",
     "geography geographic geographies region regions countries country segments markets",
     "restructuring reorganization realignment severance",
+    "liquidity quick current assets liabilities cash receivables inventory",
+    "capital intensive property equipment expenditures assets revenue",
+    "tax taxes taxation effective rate",
+    "products product services service business segment segments",
+    "customers customer clients client consumers consumer",
+    "cyclicality cyclical cycles economic demand downturn",
 )
 _STOP_WORDS = frozenset([
     "a",
@@ -283,6 +392,28 @@ _STOP_WORDS = frozenset([
     "fy",
     "year",
     "years",
+    "company",
+    "financial",
+    "analyst",
+    "based",
+    "data",
+    "much",
+    "useful",
+    "relevant",
+    "metric",
+    "metrics",
+    "measure",
+    "something",
+    "like",
+    "ask",
+    "about",
+    "explain",
+    "whether",
+    "profile",
+    "reasonably",
+    "healthy",
+    "primary",
+    "major",
 ])
 
 
@@ -310,7 +441,8 @@ _FILING_WORDS = frozenset([
 
 
 def _terms(text: str) -> tuple[str, ...]:
-    return tuple(_WORD.findall(re.sub(r"\bfy\s*(?=\d{4}\b)", "", text.casefold())))
+    text = re.sub(r"\bfy\s*(\d{2})\b", lambda m: ("20" if int(m[1]) < 70 else "19") + m[1], text.casefold())
+    return tuple(_WORD.findall(re.sub(r"\bfy\s*(?=\d{4}\b)", "", text)))
 
 
 @dataclass(frozen=True, slots=True)
@@ -338,8 +470,27 @@ def _report_signals(document_ids: set[str], query: tuple[str, ...]) -> tuple[dic
     matched_names = {
         doc: names
         for doc, (names, _) in identities.items()
-        if names and (set(names) <= words or "".join(names) in words or "".join(names) in compact_phrases)
+        if names
+        and (
+            set(names) <= words
+            or "".join(names) in words
+            or "".join(names) in compact_phrases
+            or (len(names) > 1 and {"".join(name[0] for name in names), "n".join(name[0] for name in names)} & words)
+        )
     }
+    if not matched_names:
+        # Match contractions using only names present in this scope. Require a
+        # unique document name, a shared prefix, and ordered letters; do not
+        # maintain a company-specific alias table.
+        for word in words - _STOP_WORDS:
+            matches = {}
+            for doc, (names, _) in identities.items():
+                name = "".join(names)
+                letters = iter(name)
+                if 4 <= len(word) <= len(name) // 2 and name.startswith(word[:2]) and all(c in letters for c in word):
+                    matches[doc] = names
+            if len(set(matches.values())) == 1:
+                matched_names.update(matches)
     bonuses = {}
     for doc, (_, filing_years) in identities.items():
         matching_year = bool(years & filing_years)
@@ -347,21 +498,35 @@ def _report_signals(document_ids: set[str], query: tuple[str, ...]) -> tuple[dic
             bonuses[doc] = 12 + 10 * matching_year
         elif not matched_names:
             bonuses[doc] = 2 * matching_year
-    return bonuses, {word for names in matched_names.values() for word in (*names, "".join(names))}
+    entity_words = {word for names in matched_names.values() for word in (*names, "".join(names))}
+    entity_words.update(
+        word for word in words if len(word) > 1 and any(word in "".join(names) for names in matched_names.values())
+    )
+    return bonuses, entity_words
 
 
 def _heading_bonus(text: str, patterns: tuple[str, ...]) -> int:
     heading = " ".join(_terms(text)[:35])
     heading = re.sub(r"^table of contents ", "", heading)
-    if heading.startswith(("table of contents", "index", "report of independent")):
+    if heading.startswith("report of independent"):
         return 0
-    lines = tuple(re.sub(r"^condensed ", "", " ".join(_terms(line))) for line in text.splitlines()[:5])
-    return 7 * sum(any(re.match(pattern, line) for line in (heading, *lines)) for pattern in patterns)
+    lines = tuple(re.sub(r"^condensed ", "", " ".join(_terms(line))) for line in text.splitlines() if line.strip())[:8]
+    return 14 * sum(any(re.match(pattern, line) for line in (heading, *lines)) for pattern in patterns)
+
+
+def _topic_terms(terms: tuple[str, ...]) -> set[str]:
+    variants = set(terms)
+    for term in terms:
+        if term.endswith("ies") and len(term) > 4:
+            variants.add(term[:-3] + "y")
+        elif term.endswith("s") and not term.endswith(("ss", "us", "is")) and len(term) > 3:
+            variants.add(term[:-1])
+    return variants
 
 
 def _rank_pages(
     pages: list[_SearchPage], question: str, search_order: dict[str, int]
-) -> list[tuple[float, int, int, MemoryCitation]]:
+) -> list[tuple[int, float, int, int, MemoryCitation]]:
     query = _terms(question)
     document_scores, entity_words = _report_signals({page.document_id for page in pages}, query)
     terms = tuple(
@@ -371,9 +536,11 @@ def _rank_pages(
             if word not in _STOP_WORDS and word not in entity_words and not word.isdigit() and len(word) > 1
         )
     )
-    topic_terms = set(terms)
+    topic_terms = _topic_terms(terms)
     headings = tuple(pattern for words, pattern in _TOPICS if topic_terms.intersection(words.split()))
     expanded = dict.fromkeys(terms, 1.0)
+    for term in topic_terms:
+        expanded.setdefault(term, 0.8)
     for group in _SYNONYMS:
         words = group.split()
         if topic_terms.intersection(words):
@@ -391,7 +558,10 @@ def _rank_pages(
     phrases = {(left, right) for left, right in phrases if left in topic_terms and right in topic_terms}
 
     ranked = []
+    best_document_score = max(document_scores.values(), default=0)
     for order, ((page, tokens), count) in enumerate(zip(tokenized, counts, strict=True)):
+        if best_document_score >= 12 and document_scores.get(page.document_id, 0) < best_document_score:
+            continue
         norm = 1.2 * (0.25 + 0.75 * len(tokens) / avg_length)
         score = sum(
             weight * idfs[term] * count[term] * 2.2 / (count[term] + norm)
@@ -402,9 +572,8 @@ def _rank_pages(
         if score <= 0:
             continue
         score += 1.4 * len(phrases.intersection(pairwise(tokens)))
-        score += document_scores.get(page.document_id, 0)
         rank = search_order.get(page.citation.entry_version_id, len(search_order))
-        ranked.append((-score, rank, order, page.citation))
+        ranked.append((-document_scores.get(page.document_id, 0), -score, rank, order, page.citation))
     return ranked
 
 
@@ -453,7 +622,7 @@ async def search_pdf_pages(
     result = await memory.search(SearchMemoryRequest(query=question, mode="fts", limit=min(limit, 100)))
     search_order = {hit.entry_version_id: rank for rank, hit in enumerate(result.hits)}
     ranked = _rank_pages(pages, question, search_order)
-    return tuple(citation for _, _, _, citation in sorted(ranked, key=lambda item: item[:3])[:limit])
+    return tuple(citation for _, _, _, _, citation in sorted(ranked, key=lambda item: item[:4])[:limit])
 
 
 class _PDFPageAdapter:

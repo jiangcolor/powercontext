@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import zlib
 
 import pytest
 from pypdf import PdfWriter
@@ -37,6 +38,66 @@ def blank_document():
     buffer = io.BytesIO()
     writer.write(buffer)
     return buffer.getvalue()
+
+
+def text_document(contents, *, character_map=None):
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Helvetica"),
+    })
+    if character_map is not None:
+        cmap = DecodedStreamObject()
+        cmap.set_data(character_map)
+        font[NameObject("/ToUnicode")] = cmap
+    for content in contents:
+        page = writer.add_blank_page(width=600, height=400)
+        page[NameObject("/Resources")] = DictionaryObject({
+            NameObject("/Font"): DictionaryObject({NameObject("/F1"): font}),
+        })
+        stream = DecodedStreamObject()
+        stream.set_data(content)
+        page[NameObject("/Contents")] = stream
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+def test_missing_font_glyph_uses_only_unambiguous_document_spelling():
+    raw = text_document(
+        [
+            b"BT /F1 12 Tf 20 350 Td (Operating activities; cost and cast.) Tj ET",
+            b"BT /F1 12 Tf 20 350 Td (Opera~ng cash flow; c~st; pro~t.) Tj ET",
+        ],
+        character_map=b"1 beginbfchar\n<7e> <0000>\nendbfchar",
+    )
+    pages = parse_pdf_document(PDFDocumentInput(document_id="glyphs", content=raw))
+    assert "Operating cash flow" in pages[1].text
+    assert "c\x00st" in pages[1].text  # Two possible spellings remain ambiguous.
+    assert "pro\x00t" in pages[1].text  # No intact spelling in this PDF.
+    assert "activities" not in pages[1].text  # Preserve physical page boundaries.
+
+
+def test_unicode_ligatures_preserve_searchable_words():
+    raw = text_document(
+        [b"BT /F1 12 Tf 20 350 Td (pro~t cash ~ow) Tj ET"],
+        character_map=b"1 beginbfchar\n<7e> <fb01>\nendbfchar",
+    )
+    page = parse_pdf_document(PDFDocumentInput(document_id="ligatures", content=raw))[0]
+    assert "profit" in page.text
+
+
+def test_positioned_text_runs_preserve_a_word_across_graphics_state_changes():
+    raw = text_document([
+        b"q 0.75 0 0 -0.75 28.5 813.5 cm q 0.8 0 0 0.8 0 -39774 cm "
+        b"q BT /F1 16 Tf 1 0 0 -1 0 0 Tm 368.5 -49759 Td (R) Tj ET Q "
+        b"q BT /F1 16 Tf 1 0 0 -1 0 0 Tm 380.05 -49759 Td (ESERVED) Tj ET Q Q Q",
+    ])
+    page = parse_pdf_document(PDFDocumentInput(document_id="positioned-runs", content=raw))[0]
+    assert page.text == "RESERVED"
 
 
 @pytest.mark.asyncio
@@ -62,15 +123,32 @@ def test_missing_final_pdf_marker_is_not_accepted(suffix):
         parse_pdf_document(value=PDFDocumentInput(document_id="broken", content=raw))
 
 
-@pytest.mark.parametrize("damage", ["missing-object", "truncated-content"])
+@pytest.mark.parametrize(
+    "damage", ["missing-object", "truncated-content", "broken-compression", "truncated-compression", "broken-form"]
+)
 def test_corrupt_later_page_is_not_silently_returned_as_blank(damage):
-    from pypdf.generic import DecodedStreamObject, IndirectObject, NameObject
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, EncodedStreamObject, IndirectObject, NameObject
 
     writer = PdfWriter()
     writer.add_blank_page(width=100, height=200)
     page = writer.add_blank_page(width=100, height=200)
     if damage == "missing-object":
         page[NameObject("/Contents")] = IndirectObject(9999, 0, writer)
+    elif damage in ("broken-compression", "truncated-compression"):
+        stream = EncodedStreamObject()
+        stream[NameObject("/Filter")] = NameObject("/FlateDecode")
+        stream._data = b"not a zlib stream" if damage == "broken-compression" else zlib.compress(b"BT ET")[:-3]
+        page[NameObject("/Contents")] = stream
+    elif damage == "broken-form":
+        form = DecodedStreamObject()
+        form[NameObject("/Subtype")] = NameObject("/Form")
+        form.set_data(b"BT (unterminated Tj ET")
+        page[NameObject("/Resources")] = DictionaryObject({
+            NameObject("/XObject"): DictionaryObject({NameObject("/Form1"): form}),
+        })
+        stream = DecodedStreamObject()
+        stream.set_data(b"/Form1 Do")
+        page[NameObject("/Contents")] = stream
     else:
         stream = DecodedStreamObject()
         stream.set_data(b"BT (unterminated Tj ET")
@@ -125,8 +203,10 @@ async def test_financial_paraphrase_search_survives_restart(tmp_path):
     registry = SourceDefinitionRegistry((PDF_PAGE_SOURCE_DEFINITION,))
     texts = (
         "Pending litigation and proceedings: the company faces a lawsuit in federal court.",
-        "Consolidated statement of cash flows. Depreciation and amortization 91. Capital expenditures 120.",
-        "Consolidated statement of income. Net revenues 450. Operating income 130. Profit after tax 120.",
+        "Table of Contents\n\n\n\nNorthstar Corporation\nConsolidated statement of cash flows. "
+        "Depreciation and amortization 91. Capital expenditures 120.",
+        "Table of Contents\n\n\n\nNorthstar Corporation\nConsolidated statement of income. "
+        "Net revenues 450. Operating income 130. Profit after tax 120.",
         "Business overview: sparkling beverages and snack products are sold to customers.",
         "Consolidated balance sheets. Short-term obligations 420. Long-term obligations 570.",
     )
@@ -196,3 +276,10 @@ async def test_financial_paraphrase_search_survives_restart(tmp_path):
         citations = await search_pdf_pages(memory, "What were Northstar's current liabilities in FY2024?", limit=20)
         retrieved = [(await memory.get(GetMemoryEntryRequest(citation=c))).entry.text for c in citations]
         assert any(text.startswith("Northstar_2024_10-K\nConsolidated balance sheets.") for text in retrieved)
+
+        citations = await search_pdf_pages(
+            memory, "Does North Star have healthy liquidity based on its quick ratio for FY24?", limit=3
+        )
+        retrieved = [(await memory.get(GetMemoryEntryRequest(citation=c))).entry.text for c in citations]
+        assert any(text.startswith("Northstar_2024_10-K\nConsolidated balance sheets.") for text in retrieved)
+        assert all(text.startswith("Northstar_2024_10-K\n") for text in retrieved)

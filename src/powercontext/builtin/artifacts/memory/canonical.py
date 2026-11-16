@@ -37,7 +37,7 @@ class _CanonicalValueError(ValueError):
     def __init__(self, code: str, detail: object | None = None) -> None:
         self.code = code
         messages = {
-            "text-too-long": "memory entry text must not exceed 8192 UTF-8 bytes",
+            "text-too-long": f"memory entry text must not exceed {detail or 8192} UTF-8 bytes",
             "reason-too-long": "memory change reason must not exceed 512 Unicode code points",
             "identifier-empty": "memory identifiers must be non-empty strings",
             "identifier-ascii": "memory identifiers must contain only ASCII characters",
@@ -78,13 +78,24 @@ def canonical_json(value: object) -> bytes:
     return rfc8785.dumps(_validated_json(value))
 
 
-def normalize_text(value: str) -> str:
+def normalize_text(value: str, *, max_bytes: int = 8192) -> str:
     """Normalize and validate one durable entry body."""
 
     normalized = _normalize_non_empty_string(value, "memory entry text")
-    if len(normalized.encode("utf-8")) > 8192:
-        raise _CanonicalValueError("text-too-long")
+    if len(normalized.encode("utf-8")) > max_bytes:
+        raise _CanonicalValueError("text-too-long", max_bytes)
     return normalized
+
+
+def normalize_entry_text(value: str, *, kind: str, source_refs: Sequence[object]) -> str:
+    """Keep complete source evidence within the relational TEXT storage bound.
+
+    Extracted evidence can be a whole physical page rather than a concise memory
+    fact. Its stable kind and source references carry the same rule through
+    writes, canonical hashes, persisted readback, and subsequent revisions.
+    """
+    maximum = 65535 if kind == "source-evidence" and source_refs else 8192
+    return normalize_text(value, max_bytes=maximum)
 
 
 def normalize_query(value: str) -> str:
@@ -160,7 +171,7 @@ def entry_content_bytes(
 
     return canonical_json({
         "kind": normalize_kind(kind),
-        "text": normalize_text(text),
+        "text": normalize_entry_text(text, kind=normalize_kind(kind), source_refs=source_refs),
         "source_refs": normalize_refs(source_refs),
         "artifact_refs": normalize_refs(artifact_refs),
     })

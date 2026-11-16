@@ -490,7 +490,10 @@ MemoryEntryInput:
 `reactivate()`，再基于新 head 修订正文。同一批次不能重复修改同一 entry；相同新增只保留第一个。`reason` 经过与 `MemoryChange.reason` 相同的规范化和
 长度校验；显式输入的 reason 进入对应 add/revise change，候选生成器没有可靠原因时必须使用 `None`，不能编造。
 `text` 经 NFC 和首尾空白规范化后必须非空，UTF-8 编码不得超过 8192 bytes；该上限同时保证 OceanBase `TEXT` 全文列
-可以容纳 analyzer v1 的派生 tokens。
+可以容纳 analyzer v1 的派生 tokens。`kind="source-evidence"` 且包含至少一个已校验 Source 引用的条目允许最多
+65,535 个 UTF-8 字节，使完整物理页可以保留为一个精确引用。规范化哈希和持久化版本的复用均采用相同上限；普通条目
+仍受 8192 字节限制。已有条目的哈希和修订不变。原文证据使用既有正文及检索文本列（SQLite TEXT / MySQL MEDIUMTEXT），
+不截断正文，也不拆分物理页。
 
 ## remember()
 

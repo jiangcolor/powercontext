@@ -554,7 +554,11 @@ entries is retained. `reason` uses the same normalization and length validation 
 an explicit input is copied into its add or revise change. A candidate generator with no reliable reason must use
 `None` rather than invent one. After NFC and surrounding-whitespace normalization, `text` must be non-empty and no more
 than 8192 bytes when encoded as UTF-8. This limit also ensures that the OceanBase `TEXT` full-text column can hold the
-tokens derived by analyzer v1.
+tokens derived by analyzer v1. Entries with `kind="source-evidence"` and at least one validated Source reference may
+contain up to 65,535 UTF-8 bytes so a complete physical source page can remain one exact citation. This bound is
+applied consistently during canonical hashing and reuse of persisted versions; ordinary entries retain the 8192-byte
+limit. Existing entry hashes and revisions remain unchanged. Source evidence is stored in the existing text and
+searchable-text columns (SQLite TEXT / MySQL MEDIUMTEXT), without truncation or page splitting.
 
 ## remember()
 
