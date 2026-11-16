@@ -116,6 +116,80 @@ python app.py
 
 安装依赖后，在本目录运行 `python smoke.py`。脚本用临时数据目录和合成 PDF 验证上传预览、确认保存、文献检索、图谱、写作提纲、并发读取及重启后的数据持久化。整个过程无需 API Key。
 
+## 比赛现场演示（无需 API Key）
+
+下面的流程与 `smoke.py` 的六个环节一一对应：**上传预览 → 确认保存 → 语义检索 → 脉络图 → 写作大纲 → 重启后数据仍在**，全程不请求 LLM 或 Embedding 接口。
+
+### 为什么不需要 Key
+
+`config.py` 通过 python-dotenv 读取 `.env`，`OPENAI_API_KEY` 缺省为空；`app.py` 的判断是「Key 为空或以 `sk-your` 开头就跳过 LLM」。
+
+| 环节 | 有 Key | 无 Key（演示路径） |
+|------|--------|--------------------|
+| 结构化抽取 | 模型输出标题/作者/年份/方法/贡献/主题 | 只用 PyMuPDF 文本层结果，其余字段由讲解人手填 |
+| 一句话贡献 | 模型生成 | 直接用表单里手填的「贡献总结」 |
+| 向量与聚类 | 可选 OpenAI Embedding | 本地共享词汇表 TF-IDF + 余弦相似度（`vector_store.py`） |
+| 语义相似边 | 保存时调用模型判断 | 跳过，不写 `semantic_similar` 关系 |
+| 写作大纲 | 模型生成 Related Work | 模板化的主题概览 / 分主题清单 |
+
+演示机上不放 `.env` 即可；若目录里已有带真实 Key 的 `.env`，请在 shell 里显式导出空 Key——`load_dotenv()` 默认不覆盖已存在的环境变量。
+
+### 赛前一次性准备（需联网）
+
+1. 按上面「快速部署」第 1–4 步装好 PowerContext 与 `requirements.txt`。
+2. 准备 **2–3 份有文本层的论文 PDF**（arXiv 直接下载的版本即可，不要用扫描件）：解析走 `page.get_text()`，扫描件抽不到文字，标题会退化成文件名、摘要为空。
+3. 用浏览器访问一次 `https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js`，确认这台机器能取到它：`/graph` 页面的 ECharts 由该 CDN 加载（`app.py` 的 `BASE_TEMPLATE`），这是整个演示流程唯一的前端外网依赖。
+4. 冒烟验证：`python smoke.py`。脚本用 Flask test client 在临时数据目录里跑完同样六个环节，不启动浏览器，因此不会请求该 CDN。
+
+### 现场步骤
+
+**1. 干净启动**
+
+```powershell
+$env:DATA_DIR = "$PWD\data-demo"   # 空目录，避免旧数据干扰
+$env:OPENAI_API_KEY = ""
+python app.py
+```
+
+```bash
+export DATA_DIR="$PWD/data-demo"
+export OPENAI_API_KEY=""
+python app.py
+```
+
+打开 `http://localhost:5000`。`DATA_DIR` 下的 `uploads/`、`papers_powercontext.db`、`papers.db`、`vectors.db` 会在导入配置和启动时自动创建。侧边栏的「研究画像」可跳过：当前 `SyncPaperStore.get_profile/save_profile` 是未持久化的桩，演示不依赖它。
+
+**2. 上传并确认（`/upload`）**
+- 「选择文件」挑一份 PDF →「批量上传并解析」。文件名必须以 `.pdf` 结尾，否则该文件被忽略。
+- 预览页自动带出的只有文本层结果：**标题**取正文前 10 行里第一条长度 15–300 字符、且不以 `Abstract`/`Keywords`/`Introduction`/数字/`arXiv`/`doi`/URL 开头的行；**摘要**取 `Abstract` 之后的一段。
+- 现场补 **作者、年份、会议/期刊、核心方法**，尤其要填 **主题分类**（3–5 个英文词）：脉络图的分组配色和写作大纲的主题分组都读这个字段。
+- 「✅ 批量保存」一次写入三处：Paper Artifact → `papers_powercontext.db`；PDF 原件 → `data-demo/uploads/<artifact_id>.pdf`；TF-IDF 向量（索引文本 = 标题 + 摘要 + 方法）→ `vectors.db`。
+- 换第二、第三份重复一次。再传同一份 PDF 会命中**标题去重**（完全相同或互为子串），预览页下方出现「检测到重复论文」卡片（界面固定显示相似度 90%），适合作为讲解点。
+
+**3. 语义检索（`/search`）**
+
+输入**与标题、摘要同语言的英文关键词**（如 `vector retrieval`），回车即得带相似度的结果卡片。两个讲解注意点：无 Key 时索引文本基本只含标题+摘要（「核心方法」多为空或手填），命中词请从中挑；TF-IDF 按空白切词，中文查询与英文正文不共享 token。
+
+**4. 脉络图（`/graph`）**
+
+节点是论文，标签为「年份 + 标题前 25 字」，颜色按主题分类分组，支持拖拽与缩放。如实说明：**离线保存流程只产出节点，不产出连线**——引用边要求保存请求携带非空 `references_json`（预览页该隐藏字段固定为 `[]`），语义相似边只在有 Key 的分支里调用 `discover_semantic_links`，同作者边当前没有路由触发。所以现场看到的是带主题配色的论文节点云；若一定要演示一条边，可用浏览器开发者工具把某篇的 `references_json_0` 改成库内另一篇标题的 JSON 数组（两条标题需互为子串）再提交。
+
+若 CDN 取不到：`/graph` 仍返回 200，节点与连边以 JSON 内嵌在页面的 `var data = ...` 中，可改用「📊 总览」+「📚 文献库」继续讲；也可赛前把 `echarts.min.js` 放到本机并把 `BASE_TEMPLATE` 的 `script src` 指到本地路径（需自行改 `app.py`，本 README 的部署步骤不含该改动）。
+
+**5. 写作大纲（`/writing`）**
+
+选「全部主题概览」→「🚀 生成大纲」，输出按主题分组的论文清单（每主题最多 5 篇，附年份与贡献，缺贡献时取摘要前 100 字）；选具体主题则逐篇列出标题、前 3 位作者、贡献，无 Key 时用摘要前 200 字符代替。
+
+**6. 收尾：持久化与聚类**
+- `Ctrl+C` 停服，保留同一 `DATA_DIR` 再次 `python app.py`，`/library` 仍列出全部论文——这正是 `smoke.py` 最后重启断言的行为。
+- 时间允许再演示「📚 文献库 → 🔄 重新聚类」（阈值 0.3 粗 / 0.7 细）：纯本地 TF-IDF + 并查集，无需 Key；注意它会按相似度**重写**主题标签，且少于 2 篇论文时统一落到「未分类」，建议作为最后一步。
+
+### 兜底
+
+- 端口冲突：`python -m flask --app app run --port 5001`（macOS 上 5000 常被 AirPlay 占用）。
+- 提示「无法读取 PDF，请检查文件后重试」：文件不是可被 PyMuPDF 打开的 PDF。
+- 除第 4 步的图表渲染依赖 CDN 外，其余步骤在完全断网的机器上都能跑通。
+
 ## 📁 项目结构
 
 ```
