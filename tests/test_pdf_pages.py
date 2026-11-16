@@ -62,6 +62,26 @@ def test_missing_final_pdf_marker_is_not_accepted(suffix):
         parse_pdf_document(value=PDFDocumentInput(document_id="broken", content=raw))
 
 
+@pytest.mark.parametrize("damage", ["missing-object", "truncated-content"])
+def test_corrupt_later_page_is_not_silently_returned_as_blank(damage):
+    from pypdf.generic import DecodedStreamObject, IndirectObject, NameObject
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=200)
+    page = writer.add_blank_page(width=100, height=200)
+    if damage == "missing-object":
+        page[NameObject("/Contents")] = IndirectObject(9999, 0, writer)
+    else:
+        stream = DecodedStreamObject()
+        stream.set_data(b"BT (unterminated Tj ET")
+        page[NameObject("/Contents")] = stream
+    buffer = io.BytesIO()
+    writer.write(buffer)
+
+    with pytest.raises(ValueError):
+        parse_pdf_document(PDFDocumentInput(document_id="damaged-later-page", content=buffer.getvalue()))
+
+
 def test_parse_repairs_fragmented_numeric_table_label():
     from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 

@@ -92,13 +92,19 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
 
     digest = hashlib.sha256(value.content).hexdigest()
     try:
-        reader = PdfReader(io.BytesIO(value.content))
+        reader = PdfReader(io.BytesIO(value.content), strict=True)
         if reader.is_encrypted and not reader.decrypt(""):
             raise ValueError("pdf requires a user password")  # noqa: TRY003, TRY301
         total = len(reader.pages)
         pages: list[PDFPageInput] = []
         for index in range(total):
-            text = _repair_table_labels(reader.pages[index].extract_text() or "")
+            page = reader.pages[index]
+            # Text extraction can return early for pages without font resources,
+            # hiding broken references or malformed content as an empty page.
+            content = page.get_contents()
+            if content is not None:
+                _ = content.operations
+            text = _repair_table_labels(page.extract_text() or "")
             pages.append(
                 PDFPageInput(
                     document_id=value.document_id,
